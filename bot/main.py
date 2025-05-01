@@ -1,24 +1,34 @@
+# bot/main.py
+from bot.services.reporter import set_console_logger, add_file_handler
+
+logger = set_console_logger('prehensor')
+logger.info('Консольный логгер инициализирован. Переменные окружения из .env не загружены.')
+
 from telegram.ext import ApplicationBuilder
 from bot.config import Settings
 from bot.handlers import register_handlers
 
 def main():
-    print('Inside main()')
-    settings = Settings()
-    if settings.system.debug_mode:
-        print('Конфигурация загружена.')
+    logger.info('Загружаем конфигурацию.')
+    try:
+        settings = Settings()
+    except Exception:
+        logger.critical('Ошибка при загрузке конфигурации!', exc_info=True)
+        exit(1)
+    logger.info('Конфигурация бота успешно загружена.')
+    # Включаем файловое логирование
+    add_file_handler(logger, settings.system.log_dir)
+    logger.info(f'Включили файловое логирование: {settings.system.log_dir}')
 
     app = ApplicationBuilder().token(settings.system.tg_token).build()
     app.bot_data['settings'] = settings
 
-    # регистрация всех handler’ов
+    logger.info("Регистрируем handler'ы")
     register_handlers(app)
 
-    if settings.system.debug_mode:
-        print('Загружаем бот.')
+    logger.info('Запускаем бота.')
     app.run_polling()
 
-print('Prehensor: START')
 if __name__ == '__main__':
     main()
-    print('Prehensor: FINAL')
+    logger.info('Корректное завершение.')
