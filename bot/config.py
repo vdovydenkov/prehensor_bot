@@ -104,6 +104,7 @@ class Settings:
         self.err_path_is_empty = f'{self.error} пустой путь к загруженному файлу.'
         self.err_no_download_info = f'{self.error} нет информации о загруженном файле.'
         self.err_download_failed = 'Не удалось загрузить медиа-файл.'
+        self.err_sending_failed = 'Не получилось отправить файл в чат.'
 
         self.msg_start_text = 'привет! Я бот-выцеплятор. Мне можно дать ссылку, по которой я скачаю медиа-файл.'
         self.msg_help_text = f'''
