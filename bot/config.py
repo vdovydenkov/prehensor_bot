@@ -1,9 +1,12 @@
+# bot/config.py
+import logging
+logger = logging.getLogger('prehensor')
+
 import os
 from pathlib import Path
 from dotenv import load_dotenv
 
 # Константные значения по умолчанию
-DEBUG_MODE = True
 CODEC_TITLE_DEFAULT = 'MPEG Audio Layer III (mp3)'
 CODEC_VALUE_DEFAULT = 'mp3'
 QUALITY_DEFAULT = '128'
@@ -17,17 +20,15 @@ def init_env() -> bool:
     2) Иначе — грузим .env из текущей рабочей директории (локально).
     Результат возвращаем.
     """
-
     # путь на сервере
     etc_env = Path('/etc/audio_prehensor_bot/.env')
-
     if etc_env.is_file():
         result = load_dotenv(dotenv_path=etc_env)
-        print(f'Загружаем окружение из {etc_env}')
+        logger.info(f'Загружаем окружение из {etc_env}')
     else:
         # Ищем .env локально
         result = load_dotenv()  
-        print('Загружаем окружение из .env в текущей директории.')
+        logger.info('Загружаем окружение из .env в текущей директории.')
 
     return result
 
@@ -35,44 +36,37 @@ def init_env() -> bool:
 class SystemSettings:
     def __init__(self):
         # Токен нужно сохранить в файл .env в формате:
-        # TG_TOKEN=
+        # TG_TOKEN=<токен_бота>
+        # LOG_DIR=<путь_к_логам>
 
         # Загружаем переменные окружения из .env-файла
-        dotenv_loaded = init_env()
-        # Если возникла проблема при чтении
-        if not dotenv_loaded:
+        if not init_env():
             raise FileNotFoundError('.env not found.')
-
-        self.tg_token = os.environ.get('TG_TOKEN', None)
-        # Если возникла проблема при десериализации
+        self.tg_token = os.environ.get('TG_TOKEN')
+        # Если возникла проблема при десериализации токена
         if not self.tg_token:
             raise ValueError("TG_TOKEN is missing in .env file")
-
-        self.debug_mode = DEBUG_MODE
-        # Шаг обновления информации о грогрессе загрузки через каждый мегабайт
-        self.progress_step = 1024*1024
-        return
-        # __init__
+        # Формируем путь к логам, если не считался из переменной окружения
+        default_logs = Path(__file__).parent.parent / 'logs'
+        log_dir = os.environ.get('LOG_DIR', str(default_logs))
+        if not Path(log_dir).is_dir:
+            log_dir = default_logs
+        self.log_dir = log_dir
+        # Шаг обновления информации о грогрессе загрузки через каждые 2 мегабайта
+        self.progress_step = 2*1024*1024
 
 # Пользовательские настройки
 class UserSettings:
     def __init__(self):
         # Инициируем значения по умолчанию
         self.set_default()
-        return
-        # __init__
     
     # Устанавливаем все значения по умолчанию
     def set_default(self):
         self.codec_title = CODEC_TITLE_DEFAULT
         self.codec_value = CODEC_VALUE_DEFAULT
         self.quality = QUALITY_DEFAULT
-        return
-        # set_default
     
-    def __str__(self) -> str:
-        return f"Codec Title: {self.codec_title}, Codec Value: {self.codec_value}, Quality: {self.quality}"
-
 # Все настройки
 class Settings:
     def __init__(self):
@@ -81,8 +75,6 @@ class Settings:
         
         # Инициализируем настройки по умолчанию
         self.set_default()
-        return
-        # __init__
     
     # Устанавливаем настройки по умолчанию
     def set_default(self) -> None:
@@ -130,10 +122,3 @@ class Settings:
 Поддерживаются: YouTube, VK, Odnoklassniki, Instagram, TikTok, Twitter, Rutube, SoundCloud, Dailymotion, Twitch, Mail.ru, Yandex Music и ещё сотни разных аудио-видеосервисов.
 Полный список по ссылке: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md
 '''
-
-        return
-        # set_default
-
-    def __str__(self) -> str:
-        return f"Format Result: {self.format_result}, Postprocessors Key: {self.postprocessors_key}, audio_filename: {self.audio_filename}"
-
