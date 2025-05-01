@@ -1,3 +1,7 @@
+# bot/core/messenger.py
+import logging
+logger = logging.getLogger('prehensor')
+
 import os, asyncio
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -6,43 +10,57 @@ from bot.utils.convertors import media_data_to_string
 
 async def send_to_chat(update: Update, context: ContextTypes.DEFAULT_TYPE, text: str):
     settings = context.bot_data['settings']
-    if settings.system.debug_mode:
-        print("SEND:", text)
     if update.effective_chat:
         await update.effective_chat.send_message(text=text)
+        username = update.effective_user.first_name or 'Anonym'
+        logger.debug(f'[{username}] SEND: {text}')
+    else:
+        logger.warning('send_to_chat - Попытка написать в несуществующий чат.')
 
 async def show_media_info(update, context, details=False):
+    username = update.effective_user.first_name or 'Anonym'
+    logger.debug(f'[{username}] Отправляем информацию о медиа.')
     settings = context.bot_data['settings']
-    info = context.user_data.get('media_info')
-    if not info:
+    media_info = context.user_data.get('media_info')
+    if not media_info:
+        logger.info(f'[{username}] {settings.msg_no_media_info}')
         return await send_to_chat(update, context, settings.msg_no_media_info)
-    text = media_data_to_string(info, details)
+    text = media_data_to_string(media_info, details)
     await send_to_chat(update, context, text)
+    title = media_info.get('title', 'Без заголовка')
+    logger.info(f'[{username}] Информация о <{title}> отправлена.')
 
 async def send_media(update, context):
+    username = update.effective_user.first_name or 'Anonym'
+    logger.info(f'[{username}] Отправляем файл в чат.')
     settings = context.bot_data['settings']
     user_settings = context.user_data['user_settings']
     media_info = context.user_data.get('media_info')
     if not media_info:
-        return
+        logger.error(f'[{username}] {settings.err_no_download_info}')
+        return await send_to_chat(update, context, settings.err_no_download_info)
     result_path = media_info.get('result_path')
     if result_path is None:
+        logger.error(f'[{username}] {settings.err_path_is_empty}')
         return await send_to_chat(update, context, settings.err_path_is_empty)
-    
     # Извлекаем базовую часть пути, без расширения
     base = os.path.splitext(result_path)[0]
     # К этому пути добавляем расширение выбранного кодека
     new_result_path = f"{base}.{user_settings.codec_value.lstrip('.')}"
 
     if not os.path.exists(new_result_path):
+        logger.error(f'[{username}] {settings.err_file_not_found}')
         return await send_to_chat(update, context, settings.err_file_not_found)
         
     try:  # Отправляем загруженный файл в чат
         with open(new_result_path, 'rb') as file:
             await context.bot.send_document(chat_id=update.effective_chat.id, document=file)
-    except Exception as exc_error:        
-        await send_to_chat(update, context, f'{settings.error} {exc_error}')
+    except Exception:        
+        logger.error(f'[{username}] Ошибка отправки файла в чат.', exc_info=True)
+        await send_to_chat(update, context, settings.err_sending_failed)
     finally:  # Удаляем файл
-        try: os.remove(new_result_path)
-        except OSError as error:
-            print(f"Ошибка при удалении файла: {error}")
+        logger.info(f'[{username}] Удаляем файл {new_result_path}')
+        try:
+            os.remove(new_result_path)
+        except OSError:
+            logger.warning(f'[{username}] Не получилось удалить {new_result_path}', exc_info=True)
