@@ -38,7 +38,7 @@ def process_hook(data, context: ContextTypes.DEFAULT_TYPE, update: Update, event
             download_info = format_bytes(downloaded)
             progress = f'{download_info} {settings.msg_download_completed} {settings.msg_send_file}'
             logger.debug(f'[{username}] Статус=finished')
-            await send_to_chat(update, context, progress_message)
+            await send_to_chat(update, context, progress)
         elif status == 'error':
             error = data.get('error')
             logger.debug(f'[{username}] В статусе данных в process_hook передана ошибка: {error}')
@@ -72,6 +72,8 @@ async def fetch_url(url, update, context, download=False):
         }
         logger.info(f'[{username}] Сформировали параметры для загрузки:\n{ydl_options}')
         await send_to_chat(update, context, settings.msg_start_downloading)
+    # Добавляем своего логгера
+    ydl_options.setdefault('logger', logger)
     try:
         logger.info(f'[{username}] Стартуем запрос к ydl. Ссылка: {url}')
         # get_media_from_url вызывается в потоке, loop передан заранее
