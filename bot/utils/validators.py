@@ -1,3 +1,5 @@
+# bot/utils/validators.py
+
 import re
 
 def is_http_url(string: str) -> bool:
@@ -17,5 +19,3 @@ def is_http_url(string: str) -> bool:
         r'(?:/?|[/?]\S+)$', re.IGNORECASE)
 
     return re.match(regex, string) is not None and 'localhost' not in string and ':' not in string.split('/')[2]
-    # is_http_url
-

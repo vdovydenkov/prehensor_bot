@@ -1,4 +1,6 @@
-﻿def format_bytes(size: int) -> str:
+﻿# bot/utils/format.py
+
+def format_bytes(size: int) -> str:
     '''
     Функция принимает число байт и возвращает строковое представление с разбивкой на кб, мб, гб и тб.
     Или None, если передали не число.
@@ -19,7 +21,6 @@
     
     # Форматируем строку
     return f'{size:.0f} {units[n]}'
-    # format_bytes
 
 def format_duration(seconds: int) -> str:
     '''
