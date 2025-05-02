@@ -6,48 +6,48 @@ import asyncio
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from bot.core.messenger import send_to_chat
 from bot.config import UserSettings
+from bot.core.messenger import send_to_chat
 from bot.services.media_downloader import get_media_from_url
 from bot.utils.format import format_bytes
 
 def process_hook(data, context: ContextTypes.DEFAULT_TYPE, update: Update, event_loop: asyncio.AbstractEventLoop):
-    # Для отладки
-    logger.debug(f'process_hook получил данные:\n{data}')
+    username = update.effective_user.first_name or 'Anonym'
+    logger.debug(f'[{username}] process_hook получил данные:\n{data}')
     settings = context.bot_data['settings']
 
     async def send_progress(data):
-        last_progress_value = context.user_data.get('last_progress_value', 0)
         status = data.get('status')
         downloaded = data.get('downloaded_bytes', 0)
-        total = data.get('total_bytes', None)
-
+        total = data.get('total_bytes')
         if status == 'downloading':
             if total:
                 percent = f'{downloaded / total * 100:.0f}%'
-                progress_message = f'{percent} {settings.msg_progress_percent}'
+                progress = f'{percent} {settings.msg_progress_percent}'
             else:
                 download_info = format_bytes(downloaded)
-                progress_message = f'{settings.msg_download_progress} {download_info}'
-            logger.debug(f'Строка прогресса сформирована: {progress_message}')
-            # Если прогресс преодолел заданные шаг — отправляем сообщение
-            if downloaded > last_progress_value + settings.system.progress_step:
+                progress = f'{settings.msg_download_progress} {download_info}'
+            # Если прогресс преодолел заданный шаг — отправляем сообщение
+            last_progress_value = context.user_data.get('last_progress_value', 0)
+            step = settings.system.progress_step
+            if downloaded > last_progress_value + step:
+                logger.debug(f'[{username}] Прогресс преодолел шаг {step} байт, строка готова: {progress}')
                 context.user_data['last_progress_value'] = downloaded
-                await send_to_chat(update, context, progress_message)
+                await send_to_chat(update, context, progress)
         elif status == 'finished':
             download_info = format_bytes(downloaded)
-            progress_message = f'{download_info} {settings.msg_download_completed} {settings.msg_send_file}'
-            logger.debug(f'Статус=finished')
+            progress = f'{download_info} {settings.msg_download_completed} {settings.msg_send_file}'
+            logger.debug(f'[{username}] Статус=finished')
             await send_to_chat(update, context, progress_message)
         elif status == 'error':
             error = data.get('error')
-            logger.debug(f'В статусе данных в process_hook передана ошибка: {error}')
+            logger.debug(f'[{username}] В статусе данных в process_hook передана ошибка: {error}')
             await send_to_chat(update, context, f'{settings.error} {error}')
     if event_loop and not event_loop.is_closed():
-        logger.debug('Отправляем данные для формирования строки прогресса.')
+        logger.debug(f'[{username}] Отправляем данные для формирования строки прогресса.')
         asyncio.run_coroutine_threadsafe(send_progress(data), event_loop)
     else:
-        logger.debug('Не задан или закрыт event_loop.')
+        logger.debug(f'[{username}] Не задан или закрыт event_loop.')
 
 async def fetch_url(url, update, context, download=False):
     settings = context.bot_data['settings']
@@ -72,10 +72,9 @@ async def fetch_url(url, update, context, download=False):
         }
         logger.info(f'[{username}] Сформировали параметры для загрузки:\n{ydl_options}')
         await send_to_chat(update, context, settings.msg_start_downloading)
-
     try:
-        # get_media_from_url вызывается в потоке, loop передан заранее
         logger.info(f'[{username}] Стартуем запрос к ydl. Ссылка: {url}')
+        # get_media_from_url вызывается в потоке, loop передан заранее
         info = await asyncio.to_thread(get_media_from_url, url, ydl_options, download)
     except Exception as e:
         logger.error(f'[{username}] ошибка при вызове get_media_from_url: ', exc_info=True)
@@ -85,5 +84,3 @@ async def fetch_url(url, update, context, download=False):
         logger.error(f'[{username}] данные после запроса ydl пустые.')
         await send_to_chat(update, context, settings.err_no_download_info)
     return info
-
-
