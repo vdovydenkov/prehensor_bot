@@ -16,12 +16,12 @@ POSTPROCESSORS_KEY_DEFAULT = 'FFmpegExtractAudio'
 
 def init_env() -> bool:
     """
-    1) Если файл /etc/audio_prehensor_bot/.env существует — грузим его.
+    1) Если файл /etc/prehensor_bot/.env существует — грузим его.
     2) Иначе — грузим .env из текущей рабочей директории (локально).
     Результат возвращаем.
     """
     # путь на сервере
-    etc_env = Path('/etc/audio_prehensor_bot/.env')
+    etc_env = Path('/etc/prehensor_bot/.env')
     if etc_env.is_file():
         result = load_dotenv(dotenv_path=etc_env)
         logger.info(f'Загружаем окружение из {etc_env}')
@@ -29,7 +29,6 @@ def init_env() -> bool:
         # Ищем .env локально
         result = load_dotenv()  
         logger.info('Загружаем окружение из .env в текущей директории.')
-
     return result
 
 # Системные настройки
