@@ -20,11 +20,8 @@ def get_media_from_url(url: str, options: dict, enable_downloading: bool = False
     # Грузим параметры, готовимся к загрузке и постобработке
     with yt_dlp.YoutubeDL(options) as ydl:
         # Загружаем, сохраняя информацию в словарь
-        try:
-            action = 'Загружаем, ' if enable_downloading else 'Читаем информацию, '
-            extracted_info = ydl.extract_info(url, download=enable_downloading)
-        except Exception:
-            logger.error(f'Ошибка при выполнении ydl.', exc_info=True)
+        action = 'Загружаем, ' if enable_downloading else 'Читаем информацию, '
+        extracted_info = ydl.extract_info(url, download=enable_downloading)
     # Берем путь к файлу с результатом
     result_path = ydl.prepare_filename(extracted_info)
     # Добавляем его как дополнительный ключ в словарь

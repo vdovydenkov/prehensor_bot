@@ -42,7 +42,6 @@ def process_hook(data, context: ContextTypes.DEFAULT_TYPE, update: Update, event
         elif status == 'error':
             error = data.get('error')
             logger.debug(f'[{username}] В статусе данных в process_hook передана ошибка: {error}')
-            await send_to_chat(update, context, f'{settings.error} {error}')
     if event_loop and not event_loop.is_closed():
         logger.debug(f'[{username}] Отправляем данные для формирования строки прогресса.')
         asyncio.run_coroutine_threadsafe(send_progress(data), event_loop)
