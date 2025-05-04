@@ -16,9 +16,9 @@ def main():
         logger.critical('Ошибка при загрузке конфигурации!', exc_info=True)
         exit(1)
     logger.info('Конфигурация бота успешно загружена.')
-    # Включаем файловое логирование
-    add_file_handler(logger, settings.system.log_dir)
-    logger.info(f'Включили файловое логирование: {settings.system.log_dir}')
+    # Включаем отладочное логгирование и лог ошибок в файлы
+    add_file_handlers(logger, settings.system.log_dir)
+    logger.info(f'Включили файловое логирование в папку: {settings.system.log_dir}')
 
     app = ApplicationBuilder().token(settings.system.tg_token).build()
     app.bot_data['settings'] = settings
