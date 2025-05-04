@@ -9,16 +9,11 @@ from typing import Optional
 from pydantic import BaseModel
 import yaml
 
-# Константные значения по умолчанию
-CODEC_TITLE_DEFAULT = 'MPEG Audio Layer III (mp3)'
-CODEC_VALUE_DEFAULT = 'mp3'
-QUALITY_DEFAULT = '128'
+from bot.defaults import DEFAULT_RAW_CONFIG
 
-FORMAT_RESULT_DEFAULT = 'bestaudio/best'
-POSTPROCESSORS_KEY_DEFAULT = 'FFmpegExtractAudio'
-TEMP_DIR = 'temp'
+YAML_SETTINGS = 'settings.yaml'
 
-# Загрузка .env для чувствительных данных
+# Загрузка .env для токена
 def init_env() -> bool:
     """
     1) Если файл /etc/prehensor_bot/.env существует — грузим его.
@@ -41,102 +36,94 @@ def init_env() -> bool:
     logger.critical(f'Файл .env не найден ни в {etc_env}, ни в {local_env}')
     return False
 
-# Системные настройки
-class SystemSettings:
-    def __init__(self):
-        # Токен нужно сохранить в файл .env в формате:
-        # TG_TOKEN=<токен_бота>
+# Модели Pydantic
+class UserDefaults(BaseModel):
+    codec_title: str
+    codec_value: str
+    quality: int
+    progress_step: int  # в байтах
 
-        # Загружаем переменные окружения из .env-файла
+class SysSettings(BaseModel):
+    log_dir: Path
+    temp_dir: Path
+
+class YDLSettings(BaseModel):
+    format_result: str
+    postprocessors_key: str
+
+class MsgSettings(BaseModel):
+    command_or_link: str
+    check_link: str
+    no_media_info: str
+    start_downloading: str
+    progress_percent: str
+    download_progress: str
+    download_completed: str
+    send_file: str
+    no_link: str
+    start_text: str
+    help_text: str
+
+class ErrSettings(BaseModel):
+    prefix: str
+    file_not_found: str
+    path_is_empty: str
+    no_download_info: str
+    download_failed: str
+    sending_failed: str
+
+class YAMLSettings(BaseModel):
+    user_defaults: UserDefaults
+    sys: SysSettings
+    ydl: YDLSettings
+    msg: MsgSettings
+    err: ErrSettings
+
+# Загрузка настроек из YAML или дефолтов
+def load_yaml_config(path: Path = None) -> YAMLSettings:
+    path = path or (Path(__file__).parent.parent / YAML_SETTINGS)
+    try:
+        with path.open("r", encoding="utf-8") as f:
+            raw = yaml.safe_load(f)
+        logger.info(f"Настройки загружены из {path}")
+    except Exception:
+        logger.warning(f"{path} не загружен, используем встроенные дефолтные настройки.")
+        logger.debug(f'Настройки из {path} не загрузились.', exc_info=True)
+        raw = DEFAULT_RAW_CONFIG
+    return YAMLSettings.model_validate(raw)
+
+# Основной класс настроек
+class Cfg:
+    def __init__(self):
         if not init_env():
-            raise FileNotFoundError('.env not found.')
-        self.tg_token = os.environ.get('TG_TOKEN')
-        # Если возникла проблема при десериализации токена
+            logger.critical('Нет .env, нет токена. Выгружаюсь!')
+            exit(1)
+        self.tg_token = os.environ.get("TG_TOKEN")
         if not self.tg_token:
-            raise ValueError("TG_TOKEN is missing in .env file")
-        # Формируем путь к логам, если не считался из переменной окружения
-        default_logs = Path(__file__).parent.parent / 'logs'
-        log_dir = os.environ.get('LOG_DIR', str(default_logs))
-        if not Path(log_dir).is_dir:
-            log_dir = default_logs
-        self.log_dir = log_dir
-        # Формируем путь к временному файлу: в папке temp уровнем выше,
-        # Вместо ~user_id~ нужно поставить id пользователя чат-бота
-        tmp = Path(__file__).parent.parent / TEMP_DIR
-        self.outtmpl = str(
-            tmp /
-            f'media_~user_id~_%(id)s.%(ext)s'
-        )
-        self.cache_dir = str(
-            tmp / 'chache')
+            logger.critical('.env считался, но токен отсутствует. Выгружаюсь!')
+            exit(1)
+        # Загружаем YAML-конфиг
+        cfg = load_yaml_config()
+        self.user = cfg.user_defaults
+        self.sys = cfg.sys
+        self.ydl = cfg.ydl
+        self.msg = cfg.msg
+        self.err = cfg.err
 
-        try:
-            os.makedirs(self.cache_dir, exist_ok=True)
-            logger.debug(f'Создали каталог для кэша: {self.cache_dir}')
-        except Exception:
-            logger.error(f'Ошибка при создании каталога для кэша: {self.cache_dir}', exc_info=True)
+        # Готовим каталоги
+        self.log_dir = self._ensure_dir(self.sys.log_dir)
+        self.temp_dir = self._ensure_dir(self.sys.temp_dir)
+        tmp = Path(__file__).parent.parent / self.sys.temp_dir
+        self.cache_dir = self._ensure_dir(tmp / 'cache')
+        # ~user_id~ позже заменим на id пользователя
+        self.outtmpl = str(tmp / "media_~user_id~_%(id)s.%(ext)s")
 
-# Пользовательские настройки
-class UserSettings:
-    def __init__(self):
-        # Инициируем значения по умолчанию
-        self.set_default()
-    
-    # Устанавливаем все значения по умолчанию
-    def set_default(self):
-        self.codec_title = CODEC_TITLE_DEFAULT
-        self.codec_value = CODEC_VALUE_DEFAULT
-        self.quality = QUALITY_DEFAULT
-        # Шаг обновления информации о грогрессе загрузки через каждые 2 мегабайта
-        self.progress_step = 2*1024*1024
-    
-# Все настройки
-class Settings:
-    def __init__(self):
-        # Инициализируем системные настройки
-        self.system = SystemSettings()
-        
-        # Инициализируем настройки по умолчанию
-        self.set_default()
-    
-    # Устанавливаем настройки по умолчанию
-    def set_default(self) -> None:
-        self.format_result = FORMAT_RESULT_DEFAULT
-        self.postprocessors_key = POSTPROCESSORS_KEY_DEFAULT
-
-        # Текстовые сообщения
-        self.msg_command_or_link = 'Нужно прислать или команду, или ссылку на медиа.'
-        self.msg_check_link = 'Проверяю что по ссылке.'
-        self.msg_no_media_info = 'Нет информации о медиа.'
-        self.msg_start_downloading = 'Загружаю!'
-        self.msg_progress_percent = 'загружено.'
-        self.msg_download_progress = 'Загружено '
-        self.msg_download_completed = 'загружено.'
-        self.msg_send_file = 'Отправляю файл в чат.'
-        self.msg_no_link = 'Нет ссылки на медиа.'
-        
-        # Тексты ошибок
-        self.error = 'Ошибка:'
-        self.err_file_not_found = f'{self.error} файл для отправки не существует.'
-        self.err_path_is_empty = f'{self.error} пустой путь к загруженному файлу.'
-        self.err_no_download_info = f'{self.error} нет информации о загруженном файле.'
-        self.err_download_failed = 'Не удалось загрузить медиа-файл.'
-        self.err_sending_failed = 'Не получилось отправить файл в чат.'
-
-        self.msg_start_text = 'привет! Я бот-выцеплятор. Мне можно дать ссылку, по которой я скачаю медиа-файл.'
-        self.msg_help_text = f'''
-Бот для загрузки медиафайлов по вашим ссылкам.
-
-        * Команды бота *
-/start      Стартовать бот или сбросить все настройки.
-/help       Этот текст.
-<ссылка>    Получить краткую информацию о медиа по ссылке. При этом ссылка сохраняется в контексте бота.
-/info       Подробная информация о медиа. Если ссылку не указать, то она будет взята из контекста бота.
-/download   Загрузка медиа. Если ссылку не указать, то она будет взята из контекста бота.
-
-----------------------------------------------------------------
-
-Для загрузки медиа используется библиотека yt_dlp.
-Поддерживаются: YouTube, VK, Odnoklassniki, Instagram, TikTok, Twitter, Rutube, SoundCloud, Dailymotion, Twitch, Mail.ru, Yandex Music и ещё сотни разных аудио-видеосервисов.
-Полный список по ссылке: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md
-'''
+    @staticmethod
+    def _ensure_dir(path: Path) -> str:
+        if not path.is_dir():
+            try:
+                path.mkdir(parents=True, exist_ok=True)
+                logger.debug(f"Создан каталог: {path}")
+            except Exception:
+                logger.warning(f"Не создан каталог: {path}")
+        return str(path.resolve())

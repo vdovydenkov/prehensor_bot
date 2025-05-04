@@ -1,0 +1,55 @@
+# bot/defaults.py
+
+# Значения по умолчанию
+DEFAULT_RAW_CONFIG = {
+    "user_defaults": {
+        "codec_title": "MPEG Audio Layer III (mp3)",
+        "codec_value": "mp3",
+        "quality": 128,
+        "progress_step": 2 * 1024 * 1024,
+    },
+    "sys": {
+        "log_dir": "logs/",
+        "temp_dir": "temp/"
+    },
+    "ydl": {
+        "format_result": "bestaudio/best",
+        "postprocessors_key": "FFmpegExtractAudio"
+    },
+    "msg": {
+        "command_or_link": "Нужно прислать или команду, или ссылку на медиа.",
+        "check_link": "Проверяю что по ссылке.",
+        "no_media_info": "Нет информации о медиа.",
+        "start_downloading": "Загружаю!",
+        "progress_percent": "загружено.",
+        "download_progress": "Загружено ",
+        "download_completed": "загружено.",
+        "send_file": "Отправляю файл в чат.",
+        "no_link": "Нет ссылки на медиа.",
+        "start_text": (
+            "привет! Я бот-выцеплятор. Мне можно дать ссылку, по которой я скачаю медиа-файл."
+        ),
+        "help_text": (
+            "Бот для загрузки медиафайлов по вашим ссылкам.\n\n"
+            "    * Команды бота *\n"
+            "/start      Стартовать бот или сбросить все настройки.\n"
+            "/help       Этот текст.\n"
+            "<ссылка>    Получить краткую информацию о медиа по ссылке. При этом ссылка сохраняется в контексте бота.\n"
+            "/info       Подробная информация о медиа. Если ссылку не указать, то она будет взята из контекста бота.\n"
+            "/download   Загрузка медиа. Если ссылку не указать, то она будет взята из контекста бота.\n\n"
+            "----------------------------------------------------------------\n\n"
+            "Для загрузки медиа используется библиотека yt_dlp.\n"
+            "Поддерживаются: YouTube, VK, Odnoklassniki, Instagram, TikTok, Twitter, Rutube, SoundCloud, "
+            "Dailymotion, Twitch, Mail.ru, Yandex Music и ещё сотни разных аудио-видеосервисов.\n"
+            "Полный список по ссылке: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md"
+        )
+    },
+    "err": {
+        "prefix": "Ошибка:",
+        "file_not_found": "Ошибка: файл для отправки не существует.",
+        "path_is_empty": "Ошибка: пустой путь к загруженному файлу.",
+        "no_download_info": "Ошибка: нет информации о загруженном файле.",
+        "download_failed": "Не удалось загрузить медиа-файл.",
+        "sending_failed": "Не получилось отправить файл в чат."
+    }
+}

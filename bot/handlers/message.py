@@ -6,12 +6,12 @@ from bot.core.messenger import send_to_chat, show_media_info
 
 async def message_processor(update: Update, context: ContextTypes.DEFAULT_TYPE):
     text = update.message.text or ""
-    settings = context.bot_data['settings']
+    cfg = context.bot_data['cfg']
 
     if not is_http_url(text):
-        return await send_to_chat(update, context, settings.msg_command_or_link)
+        return await send_to_chat(update, context, cfg.msg.command_or_link)
 
-    await send_to_chat(update, context, settings.msg_check_link)
+    await send_to_chat(update, context, cfg.msg.check_link)
     info = await fetch_url(text, update, context, download=False)
     if info:
         context.user_data['media_info'] = info
