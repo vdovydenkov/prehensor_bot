@@ -67,6 +67,7 @@ async def fetch_url(url, update, context, download=False):
                 'preferredquality': user_settings.quality,
             }],
             'outtmpl': outtmpl,
+            'cachedir': settings.cache_dir,
             'progress_hooks': [lambda data: process_hook(data, context, update, event_loop)],
         }
         logger.info(f'[{username}] Сформировали параметры для загрузки:\n{ydl_options}')

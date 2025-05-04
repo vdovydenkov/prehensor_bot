@@ -13,6 +13,7 @@ QUALITY_DEFAULT = '128'
 
 FORMAT_RESULT_DEFAULT = 'bestaudio/best'
 POSTPROCESSORS_KEY_DEFAULT = 'FFmpegExtractAudio'
+TEMP_DIR = '/temp/'
 
 def init_env() -> bool:
     """
@@ -82,9 +83,10 @@ class Settings:
         # Формируем путь к временному файлу: в папке temp уровнем выше,
         # Вместо ~user_id~ нужно поставить id пользователя чат-бота
         self.outtmpl = outtmpl = str(
-            Path(__file__).parent.parent / 'temp' /
+            Path(__file__).parent.parent / TEMP_DIR /
             f'media_~user_id~_%(id)s.%(ext)s'
         )
+        self.cache_dir = str(Path(__file__).parent.parent / TEMP_DIR / 'chache')
 
         # Текстовые сообщения
         self.msg_command_or_link = 'Нужно прислать или команду, или ссылку на медиа.'
