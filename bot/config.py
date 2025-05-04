@@ -13,7 +13,7 @@ QUALITY_DEFAULT = '128'
 
 FORMAT_RESULT_DEFAULT = 'bestaudio/best'
 POSTPROCESSORS_KEY_DEFAULT = 'FFmpegExtractAudio'
-TEMP_DIR = '/temp/'
+TEMP_DIR = 'temp'
 
 def init_env() -> bool:
     """
@@ -52,8 +52,21 @@ class SystemSettings:
         if not Path(log_dir).is_dir:
             log_dir = default_logs
         self.log_dir = log_dir
-        # Шаг обновления информации о грогрессе загрузки через каждые 2 мегабайта
-        self.progress_step = 2*1024*1024
+        # Формируем путь к временному файлу: в папке temp уровнем выше,
+        # Вместо ~user_id~ нужно поставить id пользователя чат-бота
+        tmp = Path(__file__).parent.parent / TEMP_DIR
+        self.outtmpl = str(
+            tmp /
+            f'media_~user_id~_%(id)s.%(ext)s'
+        )
+        self.cache_dir = str(
+            tmp / 'chache')
+
+        try:
+            os.makedirs(self.cache_dir, exist_ok=True)
+            logger.debug(f'Создали каталог для кэша: {self.cache_dir}')
+        except Exception:
+            logger.error(f'Ошибка при создании каталога для кэша: {self.cache_dir}', exc_info=True)
 
 # Пользовательские настройки
 class UserSettings:
@@ -66,6 +79,8 @@ class UserSettings:
         self.codec_title = CODEC_TITLE_DEFAULT
         self.codec_value = CODEC_VALUE_DEFAULT
         self.quality = QUALITY_DEFAULT
+        # Шаг обновления информации о грогрессе загрузки через каждые 2 мегабайта
+        self.progress_step = 2*1024*1024
     
 # Все настройки
 class Settings:
@@ -80,13 +95,6 @@ class Settings:
     def set_default(self) -> None:
         self.format_result = FORMAT_RESULT_DEFAULT
         self.postprocessors_key = POSTPROCESSORS_KEY_DEFAULT
-        # Формируем путь к временному файлу: в папке temp уровнем выше,
-        # Вместо ~user_id~ нужно поставить id пользователя чат-бота
-        self.outtmpl = outtmpl = str(
-            Path(__file__).parent.parent / TEMP_DIR /
-            f'media_~user_id~_%(id)s.%(ext)s'
-        )
-        self.cache_dir = str(Path(__file__).parent.parent / TEMP_DIR / 'chache')
 
         # Текстовые сообщения
         self.msg_command_or_link = 'Нужно прислать или команду, или ссылку на медиа.'
