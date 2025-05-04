@@ -5,6 +5,9 @@ logger = logging.getLogger('prehensor')
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from typing import Optional
+from pydantic import BaseModel
+import yaml
 
 # Константные значения по умолчанию
 CODEC_TITLE_DEFAULT = 'MPEG Audio Layer III (mp3)'
@@ -15,6 +18,7 @@ FORMAT_RESULT_DEFAULT = 'bestaudio/best'
 POSTPROCESSORS_KEY_DEFAULT = 'FFmpegExtractAudio'
 TEMP_DIR = 'temp'
 
+# Загрузка .env для чувствительных данных
 def init_env() -> bool:
     """
     1) Если файл /etc/prehensor_bot/.env существует — грузим его.
@@ -23,21 +27,25 @@ def init_env() -> bool:
     """
     # путь на сервере
     etc_env = Path('/etc/prehensor_bot/.env')
+    # путь на уровень выше скрипта
+    local_env = Path(__file__).resolve().parent.parent / '.env'
+
     if etc_env.is_file():
-        result = load_dotenv(dotenv_path=etc_env)
-        logger.info(f'Загружаем окружение из {etc_env}')
-    else:
-        # Ищем .env локально
-        result = load_dotenv()  
-        logger.info('Загружаем окружение из .env в текущей директории.')
-    return result
+        logger.info(f'Загружаем .env из {etc_env}')
+        return load_dotenv(etc_env.as_posix())
+
+    if local_env.is_file():
+        logger.info(f'Файл в /etc не найден, загружаем .env из {local_env}')
+        return load_dotenv(local_env.as_posix())
+
+    logger.critical(f'Файл .env не найден ни в {etc_env}, ни в {local_env}')
+    return False
 
 # Системные настройки
 class SystemSettings:
     def __init__(self):
         # Токен нужно сохранить в файл .env в формате:
         # TG_TOKEN=<токен_бота>
-        # LOG_DIR=<путь_к_логам>
 
         # Загружаем переменные окружения из .env-файла
         if not init_env():
