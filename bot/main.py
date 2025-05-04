@@ -1,5 +1,5 @@
 # bot/main.py
-from bot.services.reporter import set_console_logger, add_file_handler
+from bot.services.reporter import set_console_logger, add_file_handlers
 
 logger = set_console_logger('prehensor')
 logger.info('Консольный логгер инициализирован. Переменные окружения из .env не загружены.')
