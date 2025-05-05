@@ -115,7 +115,7 @@ class Cfg:
         # Готовим каталоги
         self.log_dir = self._ensure_dir(self.sys.log_dir)
         self.temp_dir = self._ensure_dir(self.sys.temp_dir)
-        tmp = Path(__file__).parent.parent / self.sys.temp_dir
+        tmp = Path(__file__).parent.parent.parent / self.sys.temp_dir
         self.cache_dir = self._ensure_dir(tmp / 'cache')
         # ~user_id~ позже заменим на id пользователя
         self.outtmpl = str(tmp / "media_~user_id~_%(id)s.%(ext)s")
