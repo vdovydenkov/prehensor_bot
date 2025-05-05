@@ -5,7 +5,7 @@ logger = set_console_logger('prehensor')
 logger.info('Консольный логгер инициализирован.')
 
 from telegram.ext import ApplicationBuilder
-from bot.config import Cfg
+from bot.config.configurator import Cfg
 from bot.handlers import register_handlers
 
 def main():

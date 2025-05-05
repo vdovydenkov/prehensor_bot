@@ -6,7 +6,7 @@ import asyncio
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from bot.config import Cfg
+from bot.config.configurator import Cfg
 from bot.core.messenger import send_to_chat
 from bot.services.media_downloader import get_media_from_url
 from bot.utils.format import format_bytes

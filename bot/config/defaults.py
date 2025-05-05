@@ -1,4 +1,4 @@
-# bot/defaults.py
+# bot/config/defaults.py
 
 # Значения по умолчанию
 DEFAULT_RAW_CONFIG = {

@@ -1,4 +1,7 @@
-# bot/config.py
+# bot/config/configurator.py
+
+YAML_SETTINGS = 'settings.yaml'
+
 import logging
 logger = logging.getLogger('prehensor')
 
@@ -9,9 +12,7 @@ from typing import Optional
 from pydantic import BaseModel
 import yaml
 
-from bot.defaults import DEFAULT_RAW_CONFIG
-
-YAML_SETTINGS = 'settings.yaml'
+from bot.config.defaults import DEFAULT_RAW_CONFIG
 
 # Загрузка .env для токена
 def init_env() -> bool:
@@ -23,7 +24,8 @@ def init_env() -> bool:
     # путь на сервере
     etc_env = Path('/etc/prehensor_bot/.env')
     # путь на уровень выше скрипта
-    local_env = Path(__file__).resolve().parent.parent / '.env'
+    base_dir = Path(__file__).resolve().parent.parent.parent
+    local_env = base_dir / '.env'
 
     if etc_env.is_file():
         logger.info(f'Загружаем .env из {etc_env}')
@@ -81,7 +83,7 @@ class YAMLSettings(BaseModel):
 
 # Загрузка настроек из YAML или дефолтов
 def load_yaml_config(path: Path = None) -> YAMLSettings:
-    path = path or (Path(__file__).parent.parent / YAML_SETTINGS)
+    path = path or (Path(__file__).parent / YAML_SETTINGS)
     try:
         with path.open("r", encoding="utf-8") as f:
             raw = yaml.safe_load(f)
