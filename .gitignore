@@ -2,14 +2,16 @@
 docs/
 logs/
 temp/
+tests/
 *.mp3
 *.bat
 *.jpg
 report.txt
 
 # Python
-*.pyc
 __pycache__/
+.pytest_cache\
+*.pyc
 
 # Environments
 .env
