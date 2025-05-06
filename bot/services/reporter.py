@@ -50,21 +50,21 @@ def add_file_handlers(logger: logging.Logger, log_dir: str) -> None:
 
     # Сначала отладочный лог
     file_path = path / DEBUG_LOG
-    file_rot = RotatingFileHandler(
+    file_for_debug = RotatingFileHandler(
         filename=str(file_path),
         maxBytes=1_000_000,
         backupCount=2
     )
-    file_rot.setLevel(logging.DEBUG)
-    file_rot.setFormatter(fmt)
-    logger.addHandler(file_rot)
+    file_for_debug.setLevel(logging.DEBUG)
+    file_for_debug.setFormatter(fmt)
+    logger.addHandler(file_for_debug)
     # Теперь лог с ошибками
     file_path = path / ERRORS_LOG
-    file_rot = RotatingFileHandler(
+    file_for_errors = RotatingFileHandler(
         filename=str(file_path),
         maxBytes=1_000_000,
         backupCount=2
     )
-    file_rot.setLevel(logging.ERROR)
-    file_rot.setFormatter(fmt)
-    logger.addHandler(file_rot)
+    file_for_errors.setLevel(logging.ERROR)
+    file_for_errors.setFormatter(fmt)
+    logger.addHandler(file_for_errors)
