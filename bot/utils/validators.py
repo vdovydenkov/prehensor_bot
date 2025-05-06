@@ -1,21 +1,46 @@
-# bot/utils/validators.py
-
 import re
+import ipaddress
+from urllib.parse import urlparse
+import logging
+logger = logging.getLogger('prehensor')
 
-def is_http_url(string: str) -> bool:
+regex = re.compile(
+    r'^(?:http)s?://'  # http:// или https://
+    r'[^/\s]+',        # хост до первого слэша или пробела
+    re.IGNORECASE
+)
+
+def is_http_url(url: str) -> bool:
     '''
-    Функция проверяет, является ли строка HTTP/HTTPS ссылкой.
+    Функция проверяет, является ли строка HTTP/HTTPS корректной ссылкой.
     '''
 
-    # Проверяем что передали
-    if not isinstance(string, str):
+    # Проверяем что передали строку
+    if not isinstance(url, str):
+        logger.debug(f'В http-валидатор передали не строку. {url}, типа {type(url)}')
         return False
 
-    regex = re.compile(
-        r'^(?:http)s?://' # схема http или https
-        r'(?:(?:[A-Z0-9](?:[A-Z0-9-]{0,61}[A-Z0-9])?\.)+(?:[A-Z]{2,6}\.?|[A-Z0-9-]{2,}\.?)|' # доменное имя
-        r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}|' # или IPv4
-        r'\[?[A-F0-9]*:[A-F0-9:]+\]?)' # или IPv6
-        r'(?:/?|[/?]\S+)$', re.IGNORECASE)
-
-    return re.match(regex, string) is not None and 'localhost' not in string and ':' not in string.split('/')[2]
+    if not regex.match(url):
+        logger.debug(f'В http-валидаторе ссылка не прошла проверку regex:\nURL: {url}\nRegex: {regex}')
+        return False
+    # Пытаемся преобразовать строку в http-адрес
+    try:
+        parsed = urlparse(url)
+        host = parsed.hostname
+        if host is None:
+            logger.debug(f'В http-валидатор передали ссылку без хоста: {url}')
+            return False
+        if host.lower() == "localhost":
+            logger.debug(f'В http-валидатор передали ссылку на localhost: {url}')
+            return False
+        try:
+            ip = ipaddress.ip_address(host)
+            if ip.version == 4:
+                return True  # корректный IPv4
+            elif ip.version == 6:
+                return True  # корректный IPv6
+        except ValueError:
+            return True  # не IP, значит домен — тоже подходит
+    except Exception:
+        logger.debug(f'В http-валидатор передали не ссылку: {url}')
+        return False
