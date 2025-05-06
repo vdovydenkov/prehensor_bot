@@ -2,45 +2,34 @@ import re
 import ipaddress
 from urllib.parse import urlparse
 import logging
+
 logger = logging.getLogger('prehensor')
 
-regex = re.compile(
-    r'^(?:http)s?://'  # http:// или https://
-    r'[^/\s]+',        # хост до первого слэша или пробела
-    re.IGNORECASE
-)
+_ipv4_pattern = re.compile(r'^\d+\.\d+\.\d+\.\d+$')
 
 def is_http_url(url: str) -> bool:
-    '''
-    Функция проверяет, является ли строка HTTP/HTTPS корректной ссылкой.
-    '''
-
-    # Проверяем что передали строку
-    if not isinstance(url, str):
-        logger.debug(f'В http-валидатор передали не строку. {url}, типа {type(url)}')
+    parsed = urlparse(url)
+    # Проверяем ссылку на протокол
+    if parsed.scheme not in ("http", "https"):
+        logger.warning(f'http-валидатор: False. У ссылки нет http или https, URL={url}')
         return False
 
-    if not regex.match(url):
-        logger.debug(f'В http-валидаторе ссылка не прошла проверку regex:\nURL: {url}\nRegex: {regex}')
+    # Проверяем на localhost
+    host = parsed.hostname
+    if not host or host.lower() == "localhost":
+        logger.warning(f'http-валидатор: False. Домен не указан, или ссылка на localhost, URL={url}')
         return False
-    # Пытаемся преобразовать строку в http-адрес
-    try:
-        parsed = urlparse(url)
-        host = parsed.hostname
-        if host is None:
-            logger.debug(f'В http-валидатор передали ссылку без хоста: {url}')
-            return False
-        if host.lower() == "localhost":
-            logger.debug(f'В http-валидатор передали ссылку на localhost: {url}')
-            return False
+
+    # Если похоже на IPv4 (только цифры и точки) — валидность проверяем только через ipaddress
+    if _ipv4_pattern.match(host):
         try:
-            ip = ipaddress.ip_address(host)
-            if ip.version == 4:
-                return True  # корректный IPv4
-            elif ip.version == 6:
-                return True  # корректный IPv6
-        except ValueError:
-            return True  # не IP, значит домен — тоже подходит
-    except Exception:
-        logger.debug(f'В http-валидатор передали не ссылку: {url}')
-        return False
+            ipaddress.IPv4Address(host)
+            logger.debug(f'http-валидатор: True. Валидный ip-адрес, URL={url}')
+            return True
+        except ipaddress.AddressValueError:
+            logger.warning(f'http-валидатор: False. Не валидный IP-адрес, URL={url}')
+            return False
+
+    # Иначе считаем это доменом
+    logger.debug(f'http-валидатор: True. Валидный адрес, URL={url}')
+    return True
