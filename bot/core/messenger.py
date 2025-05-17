@@ -2,7 +2,8 @@
 import logging
 logger = logging.getLogger('prehensor')
 
-import os, asyncio
+import os
+import asyncio
 from telegram import Update
 from telegram.ext import ContextTypes
 from bot.utils.format import format_bytes
