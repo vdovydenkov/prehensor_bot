@@ -1,6 +1,6 @@
 # bot/config/configurator.py
 
-YAML_SETTINGS = 'settings.yaml'
+from bot.config.constants import YAML_SETTINGS
 
 import logging
 logger = logging.getLogger('prehensor')
