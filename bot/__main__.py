@@ -22,14 +22,14 @@ def main():
     except Exception:
         logger.debug('Ошибка при загрузке конфигурации!', exc_info=True)
     logger.info('Конфигурация бота успешно загружена.')
-    # Включаем отладочное логгирование и лог ошибок в файлы
+    # Включаем файловые логи - отладочный и лог ошибок
     add_file_handlers(logger, cfg.log_dir)
     logger.info(f'Включили файловое логирование в папку: {cfg.log_dir}')
 
     app = ApplicationBuilder().token(cfg.tg_token).build()
     app.bot_data['cfg'] = cfg
 
-    logger.info("Регистрируем handler'ы")
+    logger.info('Регистрируем хендлеры телеграм-бота.')
     register_handlers(app)
 
     logger.info('Запускаем бота.')
