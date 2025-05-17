@@ -1,10 +1,17 @@
-# bot/main.py
-from bot.services.reporter import set_console_logger, add_file_handlers
+# bot/__main__.py
 
-logger = set_console_logger('prehensor')
+from bot.utils.reporter import (
+    set_logger,
+    add_console_handler,
+    add_file_handlers
+)
+
+logger = set_logger('prehensor')
+add_console_handler(logger)
 logger.info('Консольный логгер инициализирован.')
 
 from telegram.ext import ApplicationBuilder
+
 from bot.config.configurator import Cfg
 from bot.handlers import register_handlers
 
@@ -27,7 +34,7 @@ def main():
 
     logger.info('Запускаем бота.')
     app.run_polling()
+    logger.info('Завершаем без ошибок.')
 
 if __name__ == '__main__':
     main()
-    logger.info('Корректное завершение.')
