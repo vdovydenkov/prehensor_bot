@@ -1,4 +1,5 @@
-# bot/core/fetcher
+# bot/core/fetcher.py
+
 import logging
 logger = logging.getLogger('prehensor')
 

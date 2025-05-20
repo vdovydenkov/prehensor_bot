@@ -1,4 +1,4 @@
-# bot/utils/reporter.py
+# bot/core/log_reporter.py
 
 import logging
 from logging.handlers import RotatingFileHandler

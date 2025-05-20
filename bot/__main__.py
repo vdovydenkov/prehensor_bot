@@ -1,6 +1,6 @@
 # bot/__main__.py
 
-from bot.utils.reporter import (
+from bot.core.log_reporter import (
     set_logger,
     add_console_handler,
     add_file_handlers

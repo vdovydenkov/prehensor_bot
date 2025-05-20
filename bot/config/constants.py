@@ -1,3 +1,5 @@
+# bot\config\constants.py
+
 # Константы логгера
 DEBUG_LOG       = 'prehensor_bot_debug.log'
 ERRORS_LOG      = 'prehensor_bot_errors.log'

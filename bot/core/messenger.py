@@ -1,4 +1,5 @@
 # bot/core/messenger.py
+
 import logging
 logger = logging.getLogger('prehensor')
 
@@ -7,7 +8,7 @@ import asyncio
 from telegram import Update
 from telegram.ext import ContextTypes
 from bot.utils.format import format_bytes
-from bot.utils.convertors import media_data_to_string
+from bot.utils.converters import media_data_to_string
 
 async def send_to_chat(update: Update, context: ContextTypes.DEFAULT_TYPE, text: str):
     cfg = context.bot_data['cfg']

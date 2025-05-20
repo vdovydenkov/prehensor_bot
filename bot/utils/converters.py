@@ -1,4 +1,5 @@
-﻿# bot/utils/convertors.py
+﻿# bot/utils/converters.py
+
 from bot.utils.format import format_duration
 
 def media_data_to_string(media_info: dict, details: bool = False) -> str:

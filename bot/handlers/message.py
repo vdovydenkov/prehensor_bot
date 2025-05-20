@@ -1,3 +1,5 @@
+# bot/handlers/message.py
+
 import logging
 logger = logging.getLogger('prehensor')
 
