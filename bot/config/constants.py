@@ -1,5 +1,11 @@
 # bot\config\constants.py
 
+from pathlib import Path
+
+# Пути к .env
+ETC_ENV_PATH = Path('/etc/prehensor_bot/.env')
+LOCAL_ENV_PATH = Path(__file__).resolve().parent.parent.parent / '.env'
+
 # Константы логгера
 DEBUG_LOG       = 'prehensor_bot_debug.log'
 ERRORS_LOG      = 'prehensor_bot_errors.log'

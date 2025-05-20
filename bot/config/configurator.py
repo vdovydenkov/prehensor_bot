@@ -13,6 +13,7 @@ from pydantic import BaseModel
 import yaml
 
 from bot.config.defaults import DEFAULT_RAW_CONFIG
+from bot.config.constants import ETC_ENV_PATH, LOCAL_ENV_PATH
 
 # Загрузка .env для токена
 def init_env() -> bool:
@@ -21,21 +22,15 @@ def init_env() -> bool:
     2) Иначе — грузим .env из текущей рабочей директории (локально).
     Результат возвращаем.
     """
-    # путь на сервере
-    etc_env = Path('/etc/prehensor_bot/.env')
-    # путь на уровень выше скрипта
-    base_dir = Path(__file__).resolve().parent.parent.parent
-    local_env = base_dir / '.env'
+    if ETC_ENV_PATH.is_file():
+        logger.info(f'Загружаем .env из {ETC_ENV_PATH}')
+        return load_dotenv(ETC_ENV_PATH.as_posix())
 
-    if etc_env.is_file():
-        logger.info(f'Загружаем .env из {etc_env}')
-        return load_dotenv(etc_env.as_posix())
+    if LOCAL_ENV_PATH.is_file():
+        logger.info(f'Файл в /etc не найден, загружаем .env из {LOCAL_ENV_PATH}')
+        return load_dotenv(LOCAL_ENV_PATH.as_posix())
 
-    if local_env.is_file():
-        logger.info(f'Файл в /etc не найден, загружаем .env из {local_env}')
-        return load_dotenv(local_env.as_posix())
-
-    logger.critical(f'Файл .env не найден ни в {etc_env}, ни в {local_env}')
+    logger.critical(f'Файл .env не найден ни в {ETC_ENV_PATH}, ни в {LOCAL_ENV_PATH}')
     return False
 
 # Модели Pydantic
