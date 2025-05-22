@@ -49,30 +49,51 @@ def process_hook(data, context: ContextTypes.DEFAULT_TYPE, update: Update, event
     else:
         logger.debug(f'[{username}] Не задан или закрыт event_loop.')
 
-async def fetch_url(url, update, context, download=False):
+def get_ydl_options(update: Update, context: ContextTypes.DEFAULT_TYPE) -> dict:
+    '''
+    Формирует ydl_options из параметров конфига.
+    '''
     cfg = context.bot_data['cfg']
     user_cfg = context.user_data.get('user_cfg', cfg.user)
+    user_id = update.effective_user.id
+    user_name = update.effective_user.first_name or 'Anonym'
+    # Берём текущии event loop, чтобы передать его в hook-функцию
+    event_loop = asyncio.get_running_loop()
+    # Заменяем шаблон временного файла на id пользователя
+    outtmpl = cfg.outtmpl.replace('~user_id~', str(user_id))
+    options = {
+        'format': cfg.ydl.format_result,
+        'postprocessors': [{
+            'key': cfg.ydl.postprocessors_key,
+            'preferredcodec': user_cfg.codec_value,
+            'preferredquality': user_cfg.quality,
+        }],
+        'outtmpl': outtmpl,
+        'cachedir': cfg.cache_dir,
+        'progress_hooks': [lambda data: process_hook(data, context, update, event_loop)],
+    }
+    logger.debug(f'[{user_name}] Сформировали параметры для загрузки:\n{options}')
+    return options
+
+async def fetch_url(
+    url: str,
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    download: bool = False
+) -> dict:
+    '''
+    Запускает загрузку (если download = True, иначе - просто информацию)
+    Возвращаем словарь с результатами работы.
+    '''
+    # Собираем конфигурацию
+    cfg = context.bot_data['cfg']
     username = update.effective_user.first_name or 'Anonym'
     logger.debug(f'[{username}] пришли в fetch_url.')
     # Получаем event loop до вызова asyncio.to_thread
-    event_loop = asyncio.get_running_loop()
+    # event_loop = asyncio.get_running_loop()
     ydl_options = {}
     if download:
-        user_id = update.effective_user.id
-        # Заменяем шаблон временного файла на id пользователя
-        outtmpl = cfg.outtmpl.replace('~user_id~', str(user_id))
-        ydl_options = {
-            'format': cfg.ydl.format_result,
-            'postprocessors': [{
-                'key': cfg.ydl.postprocessors_key,
-                'preferredcodec': user_cfg.codec_value,
-                'preferredquality': user_cfg.quality,
-            }],
-            'outtmpl': outtmpl,
-            'cachedir': cfg.cache_dir,
-            'progress_hooks': [lambda data: process_hook(data, context, update, event_loop)],
-        }
-        logger.info(f'[{username}] Сформировали параметры для загрузки:\n{ydl_options}')
+        ydl_options = get_ydl_options(update, context)
         await send_to_chat(update, context, cfg.msg.start_downloading)
     # Добавляем своего логгера
     ydl_options.setdefault('logger', logger)
