@@ -32,14 +32,14 @@ def main():
     add_file_handlers(logger, cfg.log_dir)
     logger.info(f'Включили файловое логирование в папку: {cfg.log_dir}')
 
-    app = ApplicationBuilder().token(cfg.tg_token).build()
-    app.bot_data['cfg'] = cfg
-
-    logger.info('Регистрируем хендлеры телеграм-бота.')
-    register_handlers(app)
-
-    logger.info('Запускаем бота.')
     try:
+        app = ApplicationBuilder().token(cfg.tg_token).build()
+        app.bot_data['cfg'] = cfg
+
+        logger.info('Регистрируем хендлеры телеграм-бота.')
+        register_handlers(app)
+
+        logger.info('Запускаем бота.')
         app.run_polling()
     except Conflict:
         logger.error(cfg.err.bot_conflict)
