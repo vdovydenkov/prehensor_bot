@@ -62,12 +62,16 @@ class MsgSettings(BaseModel):
     help_text: str
 
 class ErrSettings(BaseModel):
-    prefix: str
-    file_not_found: str
-    path_is_empty: str
-    no_download_info: str
-    download_failed: str
-    sending_failed: str
+    prefix:               str
+    file_not_found:       str
+    path_is_empty:        str
+    no_download_info:     str
+    download_failed:      str
+    sending_failed:       str
+    bot_conflict:         str
+    network_error:        str
+    invalid_token:        str
+    other_telegram_error: str
 
 class YAMLSettings(BaseModel):
     user_defaults: UserDefaults
@@ -76,17 +80,44 @@ class YAMLSettings(BaseModel):
     msg: MsgSettings
     err: ErrSettings
 
-# Загрузка настроек из YAML или дефолтов
-def load_yaml_config(path: Path = None) -> YAMLSettings:
+def save_yaml_config(config: YAMLSettings, path: Path = None) -> None:
+    '''
+    Сохраняет переданный объект конфигурации YAMLSettings в YAML-файл.
+    Если путь не указан — сохраняет рядом с текущим модулем.
+    '''
+    if not isinstance(config, YAMLSettings):
+        logger.warning('Для сохранения конфигурации передали не YAMLSettings, сохранить не получится.')
+        return
     path = path or (Path(__file__).parent / YAML_SETTINGS)
+
+    # Преобразуем в словарь через pydantic, чтобы получить корректную структуру
+    raw_dict = config.model_dump()
+
     try:
+        # Создаём родительские каталоги, если их нет
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        # Записываем в файл с юникод-поддержкой и читаемым форматированием
+        with path.open("w", encoding="utf-8") as f:
+            yaml.dump(raw_dict, f, allow_unicode=True, sort_keys=False)
+
+        logger.info(f"Дефолтные настройки успешно сохранены в файл: {path}")
+    except Exception:
+        logger.error(f"Не удалось сохранить дефолтные настройки в файл: {path}", exc_info=True)
+
+def load_yaml_config(path: Path = None) -> YAMLSettings:
+    '''
+    Загрузка настроек из YAML или дефолтов
+    '''
+    path = path or (Path(__file__).parent / YAML_SETTINGS)
+    if path.is_file():
+        logger.info(f'Файл конфигурации {path} найден.')
         with path.open("r", encoding="utf-8") as f:
             raw = yaml.safe_load(f)
-        logger.info(f"Настройки загружены из {path}")
-    except Exception:
-        logger.warning(f"{path} не загружен, используем встроенные дефолтные настройки.")
-        logger.debug(f'Настройки из {path} не загрузились.', exc_info=True)
+    else:
+        logger.info(f"{path} не нашли, используем встроенные дефолтные настройки.")
         raw = DEFAULT_RAW_CONFIG
+        save_yaml_config(YAMLSettings.model_validate(raw), path)
     return YAMLSettings.model_validate(raw)
 
 # Основной класс настроек
