@@ -22,10 +22,10 @@ def _make_formatter() -> logging.Formatter:
     )
 
 def set_logger(name: str = 'prehensor') -> logging.Logger:
-    """
+    '''
     Настройка основного логгера.
     Вызывается в начале каждого модуля.
-    """
+    '''
     logger = logging.getLogger(name)
     if logger.level != logging.DEBUG:
         logger.setLevel(logging.DEBUG)
@@ -43,17 +43,17 @@ def add_console_handler(logger: logging.Logger) -> None:
         return
     console = logging.StreamHandler()
     console.name = "console"
-    # Консольный хендлер в уровень INFO
-    console.setLevel(logging.INFO)
+    # Консольный хендлер в уровень debug до загрузки файловых хендлеров
+    console.setLevel(logging.DEBUG)
     console.setFormatter(_make_formatter())
     logger.addHandler(console)
 
 def add_file_handlers(logger: logging.Logger, log_dir: str) -> None:
-    """
+    '''
     После успешной загрузки .env — добавляем файловые хендлеры:
     prehensor_bot_debug.log - для отладочных сообщений;
     prehensor_bot_error.log - для ошибок.
-    """
+    '''
     log_path = Path(log_dir)
     log_path.mkdir(parents=True, exist_ok=True)
     fmt = _make_formatter()
