@@ -18,11 +18,11 @@ from bot.config.models import YAMLSettings
 
 # Загрузка .env для токена
 def init_env() -> bool:
-    """
+    '''
     1) Если файл /etc/prehensor_bot/.env существует — грузим его.
     2) Иначе — грузим .env из текущей рабочей директории (локально).
     Результат возвращаем.
-    """
+    '''
     if ETC_ENV_PATH.is_file():
         logger.info(f'Загружаем .env из {ETC_ENV_PATH}')
         return load_dotenv(ETC_ENV_PATH.as_posix())
@@ -45,7 +45,7 @@ def save_yaml_config(config: YAMLSettings, path: Path = None) -> None:
     path = path or (Path(__file__).parent / YAML_SETTINGS)
 
     # Преобразуем в словарь через pydantic, чтобы получить корректную структуру
-    raw_dict = config.model_dump()
+    raw_dict = config.model_dump(mode='json')
 
     try:
         # Создаём родительские каталоги, если их нет
@@ -53,7 +53,7 @@ def save_yaml_config(config: YAMLSettings, path: Path = None) -> None:
 
         # Записываем в файл с юникод-поддержкой и читаемым форматированием
         with path.open("w", encoding="utf-8") as f:
-            yaml.dump(raw_dict, f, allow_unicode=True, sort_keys=False)
+            yaml.safe_dump(raw_dict, f, allow_unicode=True, sort_keys=False)
 
         logger.info(f"Дефолтные настройки успешно сохранены в файл: {path}")
     except Exception:
