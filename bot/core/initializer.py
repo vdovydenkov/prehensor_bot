@@ -16,16 +16,12 @@ def bot_init(config: Cfg = None) -> None:
       Регистрация командных хендлеров,
       Регистрация хендлера ошибок.
     '''
-    request = HTTPXRequest(
-        base_url="http://127.0.0.1:8081/bot"
-    )
+    builder = ApplicationBuilder().token(config.tg_token)
 
-    app = (
-        ApplicationBuilder()
-        .token(config.tg_token)
-        .request(request)
-        .build()
-    )
+    if not config.debug_mode:
+        builder = builder.base_url("http://127.0.0.1:8081/bot")
+
+    app = builder.build()
 
     app.bot_data['cfg'] = config
 

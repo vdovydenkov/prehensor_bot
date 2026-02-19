@@ -9,8 +9,8 @@ class UserDefaults(BaseModel):
     progress_step: int  # Шаг обновления линейки прогресса (в байтах)
 
 class SysSettings(BaseModel):
-    log_dir:  Path
-    temp_dir: Path
+    log_dir:    Path
+    temp_dir:   Path
 
 class YDLSettings(BaseModel):
     format_result:      str
@@ -47,4 +47,3 @@ class YAMLSettings(BaseModel):
     ydl: YDLSettings
     msg: MsgSettings
     err: ErrSettings
-

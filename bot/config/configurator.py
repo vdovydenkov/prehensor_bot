@@ -84,6 +84,7 @@ class Cfg:
         if not self.tg_token:
             logger.critical('.env считался, но токен отсутствует. Выгружаюсь!')
             exit(1)
+        self.debug_mode = os.environ.get("DEBUG_MODE")
         # Загружаем YAML-конфиг
         cfg = load_yaml_config()
         self.user = cfg.user_defaults

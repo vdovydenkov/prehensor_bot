@@ -18,9 +18,11 @@ def main():
     logger.info('Загружаем конфигурацию.')
     try:
         cfg = Cfg()
-        logger.info('Конфигурация бота успешно загружена.', cfg)
+        logger.info('Конфигурация бота успешно загружена.')
     except Exception:
         logger.info('Ошибка при загрузке конфигурации!', exc_info=True)
+    if cfg.debug_mode:
+        logger.info('Включен отладочный режим!')
     # Включаем файловые логи - отладочный и лог ошибок
     add_file_handlers(logger, cfg.log_dir)
     logger.info(f'Включили файловое логирование в папку: {cfg.log_dir}')
