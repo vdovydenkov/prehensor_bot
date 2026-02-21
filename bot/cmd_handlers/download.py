@@ -23,7 +23,11 @@ async def download_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     media_info = await fetch_url(url, update, context, download=True)
     if not media_info:
         logger.warning(f'[{username}] media_info пустой.')
-        return await send_to_chat(update, context, cfg.err.download_failed)
+        return await send_to_chat(
+                              update,
+                              context,
+                              cfg.err.download_failed
+                          )
     context.user_data['media_info'] = media_info
     logger.debug(f'[{username}] Запускаем core/messenger/send_media.')
     await send_media(update, context)

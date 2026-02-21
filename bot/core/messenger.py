@@ -10,11 +10,28 @@ from telegram.ext import ContextTypes
 from bot.utils.format import format_bytes
 from bot.utils.converters import media_data_to_string
 
-async def send_to_chat(update: Update, context: ContextTypes.DEFAULT_TYPE, text: str):
+async def send_to_chat(
+        chat_info,
+        context: ContextTypes.DEFAULT_TYPE,
+        text: str
+    ):
     cfg = context.bot_data['cfg']
-    if update.effective_chat:
-        await update.effective_chat.send_message(text=text)
-        username = update.effective_user.first_name or 'Anonym'
+    # Если передали Update - берем id
+    if isinstance(chat_info, Update):
+        chat_id = chat_info.effective_chat.id
+    else:
+        chat_id = chat_info
+    
+    if len(text) > 4096:
+        logger.warning(f'[{chat_id}] Текст превышает лимит в 4096 символов. Текст обрезан.')
+        text = text[:4093] + '...'
+
+    if chat_id:
+        await context.bot.send_message(chat_id=chat_id, text=text)
+        chat = await context.bot.get_chat(chat_id)
+        username = chat.first_name or "Anonym"
+        if len(text) > 512:
+            text = text[:509] + '...'
         logger.debug(f'[{username}] SEND: {text}')
     else:
         logger.warning('send_to_chat - Попытка написать в несуществующий чат.')

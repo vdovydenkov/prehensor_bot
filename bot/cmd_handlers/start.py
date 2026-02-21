@@ -18,4 +18,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data.clear()
     context.user_data['user_cfg'] = cfg.user
 
-    await send_to_chat(update, context, f"{username}, {cfg.msg.start_text}")
+    await send_to_chat(
+        update.effective_chat.id,
+        context,
+        f"{username}, {cfg.msg.start_text}"
+    )

@@ -16,9 +16,22 @@ def bot_init(config: Cfg = None) -> None:
       Регистрация командных хендлеров,
       Регистрация хендлера ошибок.
     '''
-    builder = ApplicationBuilder().token(config.tg_token)
+    timeout_settings = HTTPXRequest(
+        read_timeout=300.0,
+        write_timeout=300.0,
+        connect_timeout=30.0,
+        pool_timeout=30.0,
+    )
 
+    builder = (
+        ApplicationBuilder()
+        .token(config.tg_token)
+        .request(timeout_settings)
+    )
+
+    # В отладочном режиме используем стандартный Telegram API
     if not config.debug_mode:
+        # На VPS установлен локальный Telegram API, подключаемся к нему
         builder = builder.base_url("http://127.0.0.1:8081/bot")
 
     app = builder.build()

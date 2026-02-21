@@ -12,9 +12,13 @@ from bot.core.messenger import send_to_chat
 from bot.services.media_downloader import get_media_from_url
 from bot.utils.format import format_bytes
 
-def process_hook(data, context: ContextTypes.DEFAULT_TYPE, update: Update, event_loop: asyncio.AbstractEventLoop):
-    username = update.effective_user.first_name or 'Anonym'
-    logger.debug(f'[{username}] process_hook получил данные:\n{data}')
+def process_hook(
+        data,
+        context: ContextTypes.DEFAULT_TYPE,
+        chat_id: int,
+        event_loop: asyncio.AbstractEventLoop
+    ):
+    logger.debug(f'process_hook получил данные:\n{data}')
     cfg = context.bot_data['cfg']
 
     async def send_progress(data):
@@ -31,37 +35,47 @@ def process_hook(data, context: ContextTypes.DEFAULT_TYPE, update: Update, event
             # Если прогресс преодолел заданный шаг — отправляем сообщение
             last_progress_value = context.user_data.get('last_progress_value', 0)
             step = cfg.user.progress_step
-            if downloaded > last_progress_value + step:
-                logger.debug(f'[{username}] Прогресс преодолел шаг {step} байт, строка готова: {progress}')
+            if downloaded >= last_progress_value + step:
+                logger.debug(f'Прогресс преодолел шаг {step} байт, строка готова: {progress}')
                 context.user_data['last_progress_value'] = downloaded
-                await send_to_chat(update, context, progress)
+                await send_to_chat(chat_id, context, progress)
         elif status == 'finished':
             download_info = format_bytes(downloaded)
             progress = f'{download_info} {cfg.msg.download_completed} {cfg.msg.send_file}'
-            logger.debug(f'[{username}] Статус=finished')
-            await send_to_chat(update, context, progress)
+            logger.debug(f'Статус=finished')
+            await send_to_chat(chat_id, context, progress)
         elif status == 'error':
             error = data.get('error')
-            logger.debug(f'[{username}] В статусе данных в process_hook передана ошибка: {error}')
+            logger.debug(f'В статусе данных в process_hook передана ошибка: {error}')
     if event_loop and not event_loop.is_closed():
-        logger.debug(f'[{username}] Отправляем данные для формирования строки прогресса.')
-        asyncio.run_coroutine_threadsafe(send_progress(data), event_loop)
+        logger.debug(f'Отправляем данные для формирования строки прогресса.')
+        future = asyncio.run_coroutine_threadsafe(send_progress(data), event_loop)
+        future.result()
     else:
-        logger.debug(f'[{username}] Не задан или закрыт event_loop.')
+        logger.debug(f'Не задан или закрыт event_loop.')
 
-def get_ydl_options(update: Update, context: ContextTypes.DEFAULT_TYPE) -> dict:
+def get_ydl_options(
+        update: Update,
+        context: ContextTypes.DEFAULT_TYPE
+    ) -> dict:
     '''
     Формирует ydl_options из параметров конфига.
     '''
     cfg = context.bot_data['cfg']
     user_cfg = context.user_data.get('user_cfg', cfg.user)
+    chat_id = update.effective_chat.id
     user_id = update.effective_user.id
     user_name = update.effective_user.first_name or 'Anonym'
     # Берём текущии event loop, чтобы передать его в hook-функцию
-    event_loop = asyncio.get_running_loop()
+    try:
+        event_loop = asyncio.get_running_loop()
+    except RuntimeError:
+        event_loop = None
     # Заменяем шаблон временного файла на id пользователя
     outtmpl = cfg.outtmpl.replace('~user_id~', str(user_id))
     options = {
+        'quiet': True,
+        'no_warnings': True,
         'format': cfg.ydl.format_result,
         'postprocessors': [{
             'key': cfg.ydl.postprocessors_key,
@@ -70,9 +84,11 @@ def get_ydl_options(update: Update, context: ContextTypes.DEFAULT_TYPE) -> dict:
         }],
         'outtmpl': outtmpl,
         'cachedir': cfg.cache_dir,
-        'progress_hooks': [lambda data: process_hook(data, context, update, event_loop)],
+        'progress_hooks': [
+            lambda data: process_hook(data, context, chat_id, event_loop)
+        ],
     }
-    logger.debug(f'[{user_name}] Сформировали параметры для загрузки:\n{options}')
+    logger.debug(f'[{user_name}] Сформировали параметры для загрузки.')
     return options
 
 async def fetch_url(
@@ -80,7 +96,7 @@ async def fetch_url(
     update: Update,
     context: ContextTypes.DEFAULT_TYPE,
     download: bool = False
-) -> dict:
+) -> dict | None:
     '''
     Запускает загрузку (если download = True, иначе - просто информацию)
     Возвращаем словарь с результатами работы.
@@ -93,19 +109,28 @@ async def fetch_url(
     # event_loop = asyncio.get_running_loop()
     ydl_options = {}
     if download:
+        context.user_data['last_progress_value'] = 0
         ydl_options = get_ydl_options(update, context)
         await send_to_chat(update, context, cfg.msg.start_downloading)
     # Добавляем своего логгера
-    ydl_options.setdefault('logger', logger)
+    # ydl_options.setdefault('logger', logger)
     try:
         logger.info(f'[{username}] Стартуем запрос к ydl. Ссылка: {url}')
         # get_media_from_url вызывается в потоке, loop передан заранее
         info = await asyncio.to_thread(get_media_from_url, url, ydl_options, download)
     except Exception as e:
         logger.error(f'[{username}] ошибка при вызове get_media_from_url: ', exc_info=True)
-        await send_to_chat(update, context, f"{cfg.err.prefix} {e}")
+        await send_to_chat(
+            update.effective_chat.id,
+            context,
+            f"{cfg.err.prefix} {e}"
+        )
         return None
     if not info:
         logger.error(f'[{username}] данные после запроса ydl пустые.')
-        await send_to_chat(update, context, cfg.err.no_download_info)
+        await send_to_chat(
+            update.effective_chat.id,
+            context,
+            cfg.err.no_download_info
+        )
     return info
