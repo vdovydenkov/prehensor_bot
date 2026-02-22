@@ -18,7 +18,7 @@ def process_hook(
         chat_id: int,
         event_loop: asyncio.AbstractEventLoop
     ):
-    logger.debug(f'process_hook получил данные:\n{data}')
+    logger.debug(f'process_hook получил данные.')
     cfg = context.bot_data['cfg']
 
     async def send_progress(data):
@@ -48,9 +48,10 @@ def process_hook(
             error = data.get('error')
             logger.debug(f'В статусе данных в process_hook передана ошибка: {error}')
     if event_loop and not event_loop.is_closed():
-        logger.debug(f'Отправляем данные для формирования строки прогресса.')
-        future = asyncio.run_coroutine_threadsafe(send_progress(data), event_loop)
-        future.result()
+        asyncio.run_coroutine_threadsafe(
+            send_progress(data),
+            event_loop
+        )
     else:
         logger.debug(f'Не задан или закрыт event_loop.')
 
@@ -118,13 +119,14 @@ async def fetch_url(
         logger.info(f'[{username}] Стартуем запрос к ydl. Ссылка: {url}')
         # get_media_from_url вызывается в потоке, loop передан заранее
         info = await asyncio.to_thread(get_media_from_url, url, ydl_options, download)
+    except ValueError as e:
+        logger.error(f'[{username}] запрошен плейлист.')
         await send_to_chat(
             update.effective_chat.id,
             context,
             f"{cfg.err.prefix} Это ссылка на плейлист, я пока их загружать не умею."
         )
-    except ValueError as e:
-        logger.error(f'[{username}] запрошен плейлист.')
+        return None
     except Exception as e:
         logger.error(f'[{username}] ошибка при вызове get_media_from_url: ', exc_info=True)
         await send_to_chat(

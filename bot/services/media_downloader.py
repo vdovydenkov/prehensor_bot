@@ -22,27 +22,28 @@ def get_media_from_url(
         или None, если информацию извлечь не получилось.
     '''
     # Грузим параметры, готовимся к загрузке и постобработке
-    with yt_dlp.YoutubeDL(options) as ydl:
+    options_copy = options.copy() if options else {}
+    with yt_dlp.YoutubeDL(options_copy) as ydl:
         # Загружаем, сохраняя информацию в словарь
         logger.info(
             f'Загружаем '
-            '{ "медиа" if enable_downloading else "информацию" } '
-            'по URL: {url}'
+            f'{ "медиа" if enable_downloading else "информацию" } '
+            f'по URL: {url}'
         )
         extracted_info = ydl.extract_info(
             url,
             download=enable_downloading
         )
-        if not extracted_info:
-            return None
+    if not extracted_info:
+        return None
 
-        if extracted_info.get('_type') == 'playlist':
-            raise ValueError('Playlist URLs are not supported')
+    if extracted_info.get('_type') in {"playlist", "multi_video"}:
+        raise ValueError('Playlist URLs are not supported')
 
-        if enable_downloading:
-            downloads = extracted_info.get('requested_downloads')
-            if downloads:
-                result_path = downloads[0].get('filepath')    
-                logger.info(f'Загружен файл {result_path}')
+    if enable_downloading:
+        downloads = extracted_info.get("requested_downloads") or []
+        if len(downloads) > 0:
+            result_path = downloads[0].get("filepath")
+            logger.info(f"Загружен файл {result_path}")
 
     return extracted_info
