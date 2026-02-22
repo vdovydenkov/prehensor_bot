@@ -118,6 +118,13 @@ async def fetch_url(
         logger.info(f'[{username}] Стартуем запрос к ydl. Ссылка: {url}')
         # get_media_from_url вызывается в потоке, loop передан заранее
         info = await asyncio.to_thread(get_media_from_url, url, ydl_options, download)
+        await send_to_chat(
+            update.effective_chat.id,
+            context,
+            f"{cfg.err.prefix} Это ссылка на плейлист, я пока их загружать не умею."
+        )
+    except ValueError as e:
+        logger.error(f'[{username}] запрошен плейлист.')
     except Exception as e:
         logger.error(f'[{username}] ошибка при вызове get_media_from_url: ', exc_info=True)
         await send_to_chat(
