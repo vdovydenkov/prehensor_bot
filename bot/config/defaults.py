@@ -39,8 +39,8 @@ DEFAULT_RAW_CONFIG = {
             "/download   Загрузка медиа. Если ссылку после команды не указать, то она будет взята из памяти бота.\n\n"
             "----------------------------------------------------------------\n\n"
             "Для загрузки медиа используется библиотека yt_dlp.\n"
-            "Поддерживаются: YouTube, VK, Odnoklassniki, Instagram, TikTok, Twitter, Rutube, SoundCloud, "
-            "Dailymotion, Twitch, Mail.ru, Yandex Music и ещё сотни разных аудио-видеосервисов.\n"
+            "Поддерживаются: YouTube, TikTok, Rutube, SoundCloud, и ещё десятки разных аудио-видеосервисов."
+            "Бот не сможет загрузить трек там, где требуется авторизация.\n"
             "Полный список по ссылке: https://github.com/yt-dlp/yt-dlp/blob/master/supportedsites.md"
         )
     },
