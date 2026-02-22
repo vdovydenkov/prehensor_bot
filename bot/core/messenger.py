@@ -7,6 +7,8 @@ import os
 import asyncio
 from telegram import Update
 from telegram.ext import ContextTypes
+from pathvalidate import sanitize_filename
+
 from bot.utils.format import format_bytes
 from bot.utils.converters import media_data_to_string
 
@@ -58,28 +60,46 @@ async def send_media(update, context):
     if not media_info:
         logger.error(f'[{username}] {cfg.err.no_download_info}')
         return await send_to_chat(update, context, cfg.err.no_download_info)
-    result_path = media_info.get('result_path')
+
+    downloads = media_info.get('requested_downloads')
+    result_path = None
+    if isinstance(downloads, list) and downloads:
+        first = downloads[0]
+        if isinstance(first, dict):
+            result_path = first.get('filepath')
+
     if result_path is None:
         logger.error(f'[{username}] {cfg.err.path_is_empty}')
         return await send_to_chat(update, context, cfg.err.path_is_empty)
-    # Извлекаем базовую часть пути, без расширения
-    base = os.path.splitext(result_path)[0]
-    # К этому пути добавляем расширение выбранного кодека
-    new_result_path = f"{base}.{user_cfg.codec_value.lstrip('.')}"
 
-    if not os.path.exists(new_result_path):
+    if not os.path.exists(result_path):
         logger.error(f'[{username}] {cfg.err.file_not_found}')
         return await send_to_chat(update, context, cfg.err.file_not_found)
 
-    try:  # Отправляем загруженный файл в чат
-        with open(new_result_path, 'rb') as file:
-            await context.bot.send_document(chat_id=update.effective_chat.id, document=file)
+    # Делаем "красивое имя файла
+    title = media_info.get('title') or 'unknown'
+    safe_title = sanitize_filename(
+        title,
+        max_len=128,
+        platform="universal"
+    )
+
+    _, ext = os.path.splitext(result_path)
+    beauty_filename = f"{safe_title}{ext}"
+    # Отправляем загруженный файл в чат
+    try:
+        with open(result_path, 'rb') as file:
+            await context.bot.send_document(
+                chat_id=update.effective_chat.id,
+                document=file,
+                filename=beauty_filename
+            )
     except Exception:        
         logger.error(f'[{username}] Ошибка отправки файла в чат.', exc_info=True)
         await send_to_chat(update, context, cfg.err.sending_failed)
     finally:  # Удаляем файл
-        logger.info(f'[{username}] Удаляем файл {new_result_path}')
+        logger.info(f'[{username}] Удаляем файл {result_path}')
         try:
-            os.remove(new_result_path)
+            os.remove(result_path)
         except OSError:
-            logger.warning(f'[{username}] Не получилось удалить {new_result_path}', exc_info=True)
+            logger.warning(f'[{username}] Не получилось удалить {result_path}', exc_info=True)

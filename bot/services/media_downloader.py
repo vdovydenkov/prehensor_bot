@@ -39,9 +39,10 @@ def get_media_from_url(
         if extracted_info.get('_type') == 'playlist':
             raise ValueError('Playlist URLs are not supported')
 
-        # Берем путь к файлу с результатом
-        result_path = ydl.prepare_filename(extracted_info)
-    # Добавляем его как дополнительный ключ в словарь
-    extracted_info['result_path'] = result_path
+        if enable_downloading:
+            downloads = extracted_info.get('requested_downloads')
+            if downloads:
+                result_path = downloads[0].get('filepath')    
+                logger.info(f'Загружен файл {result_path}')
 
     return extracted_info
