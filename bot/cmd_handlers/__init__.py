@@ -7,8 +7,33 @@ from .download import download_command
 from .message import message_processor
 
 def register_handlers(app):
-    app.add_handler(CommandHandler("start", start_command))
-    app.add_handler(CommandHandler("help", help_command))
-    app.add_handler(CommandHandler("info", info_command))
-    app.add_handler(CommandHandler("download", download_command))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, message_processor))
+    app.add_handler(
+        CommandHandler(
+            "start",
+            start_command
+        )
+    )
+    app.add_handler(
+        CommandHandler(
+            "help",
+            help_command
+        )
+    )
+    app.add_handler(
+        CommandHandler(
+            ["info", "i"],
+            info_command
+        )
+    )
+    app.add_handler(
+        CommandHandler(
+            ["download", "d"],
+            download_command
+        )
+    )
+    app.add_handler(
+        MessageHandler(
+            filters.TEXT & ~filters.COMMAND,
+            message_processor
+        )
+    )
