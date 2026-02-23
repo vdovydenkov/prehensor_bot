@@ -6,14 +6,42 @@ logger = logging.getLogger('prehensor')
 from telegram import Update
 from telegram.ext import ContextTypes
 from bot.core.messenger import send_to_chat
+from bot.config.configurator import Cfg
+from bot.config.defaults import DEFAULT_RAW_CONFIG
 
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_msg = update.message.text
+async def help_command(
+        update: Update,
+        context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
+    chat_id = update.effective_chat.id
+    if chat_id is None:
+        logger.warning('help_command: chat_id is None.')
+        return
+
     username = update.effective_user.first_name or 'Anonym'
-    logger.info(f'[{username}] /help, text={user_msg}')
+    user_msg = update.message.text
 
-    text = context.bot_data['cfg'].msg.help_text
-    if not text:
-        logger.debug(f'[{username}] Нет текста в bot_data["cfg"].msg.help_text')
-        logger.warning(f'[{username}] Нет текста справки.')
-    await send_to_chat(update, context, text)
+    # Идентификатор для логгера
+    local_id = f'help_command:{username}'
+
+    logger.info(f'[{local_id}] user_msg={user_msg}')
+
+    cfg = context.bot_data.get('cfg')
+    if (cfg is None) or (not isinstance(cfg, Cfg)):
+        logger.warning(
+            f'[{local_id}] Не считался конфиг и текст справки из cfg.msg.help_text.'
+            'Пытаемся считать из DEFAULT_RAW_CONFIG.'
+        )
+        try:
+            text = DEFAULT_RAW_CONFIG['msg']['help_text']
+        except KeyError:
+            logger.error(f'[{local_id}] Не считался текст справки из DEFAULT_RAW_CONFIG.')
+            text = 'Нет текста справки.'
+    else:
+        text = cfg.msg.help_text
+
+    await send_to_chat(
+        chat_id,
+        context.bot,
+        text
+    )

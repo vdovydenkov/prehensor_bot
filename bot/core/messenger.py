@@ -4,102 +4,92 @@ import logging
 logger = logging.getLogger('prehensor')
 
 import os
-import asyncio
-from telegram import Update
-from telegram.ext import ContextTypes
-from pathvalidate import sanitize_filename
+from typing import Dict
+from telegram import Bot
 
-from bot.utils.format import format_bytes
-from bot.utils.converters import media_data_to_string
+from bot.utils.converters import media_data_to_string, media_info_to_filename
+from bot.utils.extractors import get_path
 
 async def send_to_chat(
-        chat_info,
-        context: ContextTypes.DEFAULT_TYPE,
+        chat_id: int,
+        bot: Bot,
         text: str
     ):
-    cfg = context.bot_data['cfg']
-    # Если передали Update - берем id
-    if isinstance(chat_info, Update):
-        chat_id = chat_info.effective_chat.id
-    else:
-        chat_id = chat_info
-    
+    # Обрезаем длинную строку
     if len(text) > 4096:
-        logger.warning(f'[{chat_id}] Текст превышает лимит в 4096 символов. Текст обрезан.')
+        logger.warning(f'[send_to_chat:{chat_id}] Текст превышает лимит в 4096 символов. Текст обрезан.')
         text = text[:4093] + '...'
 
-    if chat_id:
-        await context.bot.send_message(chat_id=chat_id, text=text)
-        chat = await context.bot.get_chat(chat_id)
-        username = chat.first_name or "Anonym"
-        if len(text) > 512:
-            text = text[:509] + '...'
-        logger.debug(f'[{username}] SEND: {text}')
-    else:
-        logger.warning('send_to_chat - Попытка написать в несуществующий чат.')
+    if chat_id is None:
+        logger.warning('[send_to_chat:{chat_id}] Попытка написать в несуществующий чат.')
+        return
 
-async def show_media_info(update, context, details=False):
-    username = update.effective_user.first_name or 'Anonym'
-    logger.debug(f'[{username}] Отправляем информацию о медиа.')
-    cfg = context.bot_data['cfg']
-    media_info = context.user_data.get('media_info')
-    if not media_info:
-        logger.info(f'[{username}] {cfg.msg.no_media_info}')
-        return await send_to_chat(update, context, cfg.msg.no_media_info)
+    await bot.send_message(chat_id, text)
+
+async def send_media_info(
+        chat_id: int,
+        bot: Bot,
+        media_info: Dict,
+        details=False,
+    ) -> None:
+    local_id = f'send_media_info:{chat_id}'
+    logger.info(
+        f'[{local_id}] Отправка media_info.'
+    )
+    if (media_info is None) or (not isinstance(media_info, Dict)):
+        logger.error(f'[{local_id}] media_info не содержит данных или не словарь.')
+        return await send_to_chat(chat_id, bot, 'Нет информации о медиа.')
     text = media_data_to_string(media_info, details)
-    await send_to_chat(update, context, text)
-    title = media_info.get('title', 'Без заголовка')
-    logger.info(f'[{username}] Информация о <{title}> отправлена.')
+    await send_to_chat(chat_id, bot, text)
+    logger.debug(f'[{local_id}] Информация отправлена.')
 
-async def send_media(update, context):
-    username = update.effective_user.first_name or 'Anonym'
-    logger.info(f'[{username}] Отправляем файл в чат.')
-    cfg = context.bot_data['cfg']
-    user_cfg = context.user_data['user_cfg']
-    media_info = context.user_data.get('media_info')
+async def send_media(
+        chat_id: int,
+        bot: Bot,
+        media_info: Dict,
+        error_msg: str = 'Ошибка при отправке файла в чат. Администратора уведомим.',
+    ) -> None:
+    local_id = f'send_media:{chat_id}'
+    logger.info(
+        f'[{local_id}] Отправка media файла в чат.'
+    )
     if not media_info:
-        logger.error(f'[{username}] {cfg.err.no_download_info}')
-        return await send_to_chat(update, context, cfg.err.no_download_info)
+        logger.error(
+            f'[{local_id}] media_info не содержит данных.'
+        )
+        return await send_to_chat(chat_id, bot, error_msg)
 
-    downloads = media_info.get('requested_downloads')
-    result_path = None
-    if isinstance(downloads, list) and downloads:
-        first = downloads[0]
-        if isinstance(first, dict):
-            result_path = first.get('filepath')
-
+    result_path = get_path(media_info)
     if result_path is None:
-        logger.error(f'[{username}] {cfg.err.path_is_empty}')
-        return await send_to_chat(update, context, cfg.err.path_is_empty)
+        logger.error(f'[{local_id}] media_info не содержит пути к медиафайлу.')
+        return await send_to_chat(chat_id, bot, error_msg)
 
     if not os.path.exists(result_path):
-        logger.error(f'[{username}] {cfg.err.file_not_found}')
-        return await send_to_chat(update, context, cfg.err.file_not_found)
+        logger.error(f'[{local_id}] Файл не найден: {result_path}')
+        return await send_to_chat(chat_id, bot, error_msg)
 
     # Делаем "красивое имя файла
-    title = media_info.get('title') or 'unknown'
-    safe_title = sanitize_filename(
-        title,
-        max_len=128,
-        platform="universal"
-    )
-
-    _, ext = os.path.splitext(result_path)
-    beauty_filename = f"{safe_title}{ext}"
+    beauty_filename = media_info_to_filename(media_info)
     # Отправляем загруженный файл в чат
     try:
         with open(result_path, 'rb') as file:
-            await context.bot.send_document(
-                chat_id=update.effective_chat.id,
+            await bot.send_document(
+                chat_id,
                 document=file,
                 filename=beauty_filename
             )
-    except Exception:        
-        logger.error(f'[{username}] Ошибка отправки файла в чат.', exc_info=True)
-        await send_to_chat(update, context, cfg.err.sending_failed)
+    except Exception as e:
+        msg = str(e)
+        logger.error(
+            f'[{local_id}] Не удалось отправить медиафайл в чат:\n{msg}'
+        )
+        await send_to_chat(chat_id, bot, error_msg)
     finally:  # Удаляем файл
-        logger.info(f'[{username}] Удаляем файл {result_path}')
+        logger.debug(f'[{local_id}] Удаляем файл {result_path}')
         try:
             os.remove(result_path)
-        except OSError:
-            logger.warning(f'[{username}] Не получилось удалить {result_path}', exc_info=True)
+        except OSError as e:
+            msg = str(e)
+            logger.warning(
+                f'[{local_id}] Не получилось удалить файл: {result_path}\n{msg}'
+            )

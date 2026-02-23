@@ -38,12 +38,20 @@ def process_hook(
             if downloaded >= last_progress_value + step:
                 logger.debug(f'Прогресс преодолел шаг {step} байт, строка готова: {progress}')
                 context.user_data['last_progress_value'] = downloaded
-                await send_to_chat(chat_id, context, progress)
+                await send_to_chat(
+                    chat_id,
+                    context.bot,
+                    progress
+                )
         elif status == 'finished':
             download_info = format_bytes(downloaded)
             progress = f'{download_info} {cfg.msg.download_completed} {cfg.msg.send_file}'
             logger.debug(f'Статус=finished')
-            await send_to_chat(chat_id, context, progress)
+            await send_to_chat(
+                chat_id,
+                context.bot,
+                progress
+            )
         elif status == 'error':
             error = data.get('error')
             logger.debug(f'В статусе данных в process_hook передана ошибка: {error}')
@@ -102,17 +110,24 @@ async def fetch_url(
     Запускает загрузку (если download = True, иначе - просто информацию)
     Возвращаем словарь с результатами работы.
     '''
+    chat_id = update.effective_chat.id
     # Собираем конфигурацию
     cfg = context.bot_data['cfg']
     username = update.effective_user.first_name or 'Anonym'
-    logger.debug(f'[{username}] пришли в fetch_url.')
+
+    logger.debug(f'[{username}] Пришли в fetch_url.')
+
     # Получаем event loop до вызова asyncio.to_thread
     # event_loop = asyncio.get_running_loop()
     ydl_options = {}
     if download:
         context.user_data['last_progress_value'] = 0
         ydl_options = get_ydl_options(update, context)
-        await send_to_chat(update, context, cfg.msg.start_downloading)
+        await send_to_chat(
+            chat_id,
+            context.bot,
+            cfg.msg.start_downloading
+        )
     # Добавляем своего логгера
     # ydl_options.setdefault('logger', logger)
     try:
@@ -122,24 +137,25 @@ async def fetch_url(
     except ValueError as e:
         logger.error(f'[{username}] запрошен плейлист.')
         await send_to_chat(
-            update.effective_chat.id,
-            context,
+            chat_id,
+            context.bot,
             f"{cfg.err.prefix} Это ссылка на плейлист, я пока их загружать не умею."
         )
         return None
     except Exception as e:
+        msg = str(e)
         logger.error(f'[{username}] ошибка при вызове get_media_from_url: ', exc_info=True)
         await send_to_chat(
-            update.effective_chat.id,
-            context,
-            f"{cfg.err.prefix} {e}"
+            chat_id,
+            context.bot,
+            f"{cfg.err.prefix} {msg}"
         )
         return None
     if not info:
         logger.error(f'[{username}] данные после запроса ydl пустые.')
         await send_to_chat(
-            update.effective_chat.id,
-            context,
+            chat_id,
+            context.bot,
             cfg.err.no_download_info
         )
     return info

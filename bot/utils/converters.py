@@ -1,6 +1,10 @@
 ﻿# bot/utils/converters.py
+import os
+from typing import Dict
+from pathvalidate import sanitize_filename
 
 from bot.utils.format import format_duration
+from bot.utils.extractors import get_path
 
 def media_data_to_string(media_info: dict, details: bool = False) -> str:
     '''
@@ -45,3 +49,20 @@ def media_data_to_string(media_info: dict, details: bool = False) -> str:
         result += ', '.join(view_statistic) + ".\n"
 
     return result
+
+def media_info_to_filename(
+        media_info: Dict,
+    ) -> str:
+    title = media_info.get('title') or 'unknown'
+    safe_title = sanitize_filename(
+        title,
+        max_len=128,
+        platform="universal"
+    )
+
+    path = get_path(media_info)
+    if path is not None:
+        _, ext = os.path.splitext(path)
+    else:
+        ext = ''
+    return f"{safe_title}{ext}"
