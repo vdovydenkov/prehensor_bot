@@ -11,7 +11,7 @@ from telegram.error import (
     TelegramError, Conflict, InvalidToken, NetworkError
 )
 
-from bot.config.defaults import DEFAULT_RAW_CONFIG
+from bot.infra.config.defaults import DEFAULT_RAW_CONFIG
 
 async def error_catcher(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Если конфига нет в контексте - берём по дефолту.

@@ -2,9 +2,14 @@
 
 from pathlib import Path
 
-# Пути к .env
-ETC_ENV_PATH = Path('/etc/prehensor_bot/.env')
-LOCAL_ENV_PATH = Path(__file__).resolve().parent.parent.parent / '.env'
+# Корневой каталог бота
+BOT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+
+# Пути к файлам
+ETC_ENV_PATH   = Path('/etc/prehensor_bot/.env')
+LOCAL_ENV_PATH = BOT_ROOT / '.env'
+DB_PATH        = BOT_ROOT / 'data/prehensor_bot.db'
+DB_URL         = f"sqlite+aiosqlite:///{DB_PATH.as_posix()}"
 
 # Константы логгера
 DEBUG_LOG       = 'prehensor_bot_debug.log'

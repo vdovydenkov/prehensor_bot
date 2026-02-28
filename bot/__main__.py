@@ -10,9 +10,9 @@ logger = set_logger('prehensor')
 add_console_handler(logger)
 logger.info('Консольный логгер инициализирован.')
 
-from bot.core.initializer import bot_init
+from bot.bootstrap import bot_init
 from bot.core.error_handler import error_catcher
-from bot.config.configurator import Cfg
+from bot.infra.config.configurator import Cfg
 
 def main():
     logger.info('Загружаем конфигурацию.')

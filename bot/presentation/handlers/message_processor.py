@@ -8,8 +8,8 @@ from telegram.ext import ContextTypes
 from bot.utils.validators import is_http_url
 from bot.core.fetcher import fetch_url
 from bot.core.messenger import send_to_chat, send_media_info
-from bot.config.configurator import Cfg
-from bot.config.defaults import DEFAULT_RAW_CONFIG
+from bot.infra.config.configurator import Cfg
+from bot.infra.config.defaults import DEFAULT_RAW_CONFIG
 
 async def message_processor(
         update: Update,

@@ -7,8 +7,11 @@ from telegram.ext import ApplicationBuilder
 from telegram.request import HTTPXRequest
 
 from bot.core.error_handler import error_catcher
-from bot.config.configurator import Cfg
-from bot.cmd_handlers import register_handlers
+from bot.infra.config.configurator import Cfg
+from bot.infra.repositories.user_repository import UserRepository
+from bot.infra.repositories.sqlite_user_repository import SqliteUserRepository
+from bot.application.user_service import UserService
+from bot.presentation.handlers import register_handlers
 
 def bot_init(config: Cfg = None) -> None:
     '''
@@ -16,6 +19,7 @@ def bot_init(config: Cfg = None) -> None:
       Регистрация командных хендлеров,
       Регистрация хендлера ошибок.
     '''
+    # Таймауты бота
     timeout_settings = HTTPXRequest(
         read_timeout=300.0,
         write_timeout=300.0,
@@ -38,9 +42,13 @@ def bot_init(config: Cfg = None) -> None:
 
     app.bot_data['cfg'] = config
 
-    logger.info('Регистрируем командные хендлеры бота.')
     register_handlers(app)
 
     app.add_error_handler(error_catcher)
+
+    repo = SqliteUserRepository()
+    service = UserService(repo)
+    app.bot_data['service'] = service
+
     logger.info('Запускаем бота.')
     app.run_polling()

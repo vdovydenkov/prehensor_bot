@@ -5,7 +5,7 @@ from logging.handlers import RotatingFileHandler
 import os
 from pathlib import Path
 
-from bot.config.constants import (
+from bot.infra.config.constants import (
     DEBUG_LOG,
     ERRORS_LOG,
     LOG_MSG_FMT,

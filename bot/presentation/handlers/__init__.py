@@ -4,7 +4,7 @@ from .start import start_command
 from .help import help_command
 from .info import info_command
 from .download import download_command
-from .message import message_processor
+from .message_processor import message_processor
 
 def register_handlers(app):
     app.add_handler(

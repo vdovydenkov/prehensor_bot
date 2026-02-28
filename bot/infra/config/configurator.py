@@ -1,6 +1,6 @@
-# bot/config/configurator.py
+# bot/infra/config/configurator.py
 
-from bot.config.constants import YAML_SETTINGS
+from bot.infra.config.constants import YAML_SETTINGS
 
 import logging
 logger = logging.getLogger('prehensor')
@@ -12,9 +12,9 @@ from typing import Optional
 from pydantic import BaseModel
 import yaml
 
-from bot.config.defaults import DEFAULT_RAW_CONFIG
-from bot.config.constants import ETC_ENV_PATH, LOCAL_ENV_PATH
-from bot.config.models import YAMLSettings
+from bot.infra.config.defaults import DEFAULT_RAW_CONFIG
+from bot.infra.config.constants import ETC_ENV_PATH, LOCAL_ENV_PATH
+from bot.infra.config.models import YAMLSettings
 
 # Загрузка .env для токена
 def init_env() -> bool:

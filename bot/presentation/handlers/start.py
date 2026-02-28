@@ -5,23 +5,36 @@ logger = logging.getLogger('prehensor')
 
 from telegram import Update
 from telegram.ext import ContextTypes
+
 from bot.core.messenger import send_to_chat
-from bot.config.configurator import Cfg
-from bot.config.defaults import DEFAULT_RAW_CONFIG
+from bot.infra.config.configurator import Cfg
+from bot.infra.config.defaults import DEFAULT_RAW_CONFIG
+from bot.domain.models.user import User
 
 async def start_command(
         update: Update,
         context: ContextTypes.DEFAULT_TYPE
     ) -> None:
+    local_id = f'start_command'
+
     chat_id = update.effective_chat.id
     if chat_id is None:
-        logger.warning('start_command: chat_id is None.')
+        logger.warning(f'[{local_id}] chat_id is None.')
         return
+
+    service = context.bot_data.get('service')
+    if service is None:
+        logger.warning(f'[{local_id}] User service is None.')
+        return
+
+    user = await service.get_or_create_user(
+        update.effective_user
+    )
 
     username = update.effective_user.first_name or 'Anonym'
     user_msg = update.message.text
 
-    # Идентификатор для логгера
+    # Идентификатор для логгера - добавляем имя пользователя
     local_id = f'start_command:{username}'
 
     logger.info(f'[{local_id}] user_msg={user_msg}')

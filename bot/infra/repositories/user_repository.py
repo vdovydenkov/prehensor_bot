@@ -1,0 +1,21 @@
+# bot/infra/repositories/user_repository.py
+from abc import ABC, abstractmethod
+from typing import Optional
+
+from bot.domain.models.user import User
+from bot.infra.db.models.user_orm import UserORM
+
+
+class UserRepository(ABC):
+
+    @abstractmethod
+    async def get_by_telegram_id(self, tg_id: int) -> Optional[User]:
+        pass
+
+    @abstractmethod
+    async def save_or_update(self, domain_user: User) -> None:
+        pass
+
+    @abstractmethod
+    async def mark_seen(self, tg_id: int) -> None:
+        pass
