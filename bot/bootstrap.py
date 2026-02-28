@@ -6,7 +6,7 @@ logger = logging.getLogger('prehensor')
 from telegram.ext import ApplicationBuilder
 from telegram.request import HTTPXRequest
 
-from bot.core.error_handler import error_catcher
+from bot.presentation.common.error_handler import error_handler
 from bot.infra.config.configurator import Cfg
 from bot.infra.repositories.user_repository import UserRepository
 from bot.infra.repositories.sqlite_user_repository import SqliteUserRepository
@@ -44,7 +44,7 @@ def bot_init(config: Cfg = None) -> None:
 
     register_handlers(app)
 
-    app.add_error_handler(error_catcher)
+    app.add_error_handler(error_handler)
 
     repo = SqliteUserRepository()
     service = UserService(repo)

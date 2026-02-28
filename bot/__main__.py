@@ -11,7 +11,7 @@ add_console_handler(logger)
 logger.info('Консольный логгер инициализирован.')
 
 from bot.bootstrap import bot_init
-from bot.core.error_handler import error_catcher
+from bot.presentation.common.error_handler import error_handler
 from bot.infra.config.configurator import Cfg
 
 def main():

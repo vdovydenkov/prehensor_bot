@@ -1,4 +1,4 @@
-# bot/core/error_catcher.py
+# bot/presentation/common/error_handler.py
 
 import logging
 logger = logging.getLogger('prehensor')
@@ -13,19 +13,28 @@ from telegram.error import (
 
 from bot.infra.config.defaults import DEFAULT_RAW_CONFIG
 
-async def error_catcher(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def error_handler(
+        update: Update,
+        context: ContextTypes.DEFAULT_TYPE
+    ) -> None:
     # Если конфига нет в контексте - берём по дефолту.
-    cfg = context.bot_data.get('cfg', DEFAULT_RAW_CONFIG)
+    cfg = context.bot_data.get(
+        'cfg',
+        DEFAULT_RAW_CONFIG
+    )
 
     err = context.error
-    if isinstance(context.error, NetworkError):
+    if isinstance(err, NetworkError):
         logger.error(cfg.err.network_error)
-    elif isinstance(context.error, Conflict):
+    elif isinstance(err, Conflict):
         logger.error(cfg.err.bot_conflict)
-    elif isinstance(context.error, InvalidToken):
+    elif isinstance(err, InvalidToken):
         logger.error(cfg.err.invalid_token)
     else:
-        logger.error(cfg.err.other_telegram_error, exc_info=context.error)
+        logger.error(
+            cfg.err.other_telegram_error,
+            exc_info=True
+        )
 
     if isinstance(update, Update) and update.effective_user:
         try:
