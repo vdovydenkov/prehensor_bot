@@ -1,4 +1,4 @@
-# bot\core\initializer.py
+# bot\bootstrap.py
 
 import logging
 logger = logging.getLogger('prehensor')

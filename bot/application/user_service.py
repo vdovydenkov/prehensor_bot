@@ -3,26 +3,33 @@ import logging
 logger = logging.getLogger('prehensor')
 
 import telegram
+from sqlalchemy.exc import SQLAlchemyError
 
 from bot.infra.exceptions import DatabaseError
 from bot.infra.repositories.user_repository import UserRepository
-from bot.domain.models.user import User
+from bot.domain.models.user import DomainUser
+from bot.domain.models.permissions import Permission
+from bot.application.exceptions import (
+    UserServiceError,
+    UserNotFoundError,
+    UserBlockedError,
+    AccessDeniedError,
+)
 
 class UserService:
     def __init__(self, user_repo: UserRepository) -> None:
         self.repo = user_repo
-        self.user = None
 
     async def get_or_create_user(
             self,
             tg_user: telegram.User
-        ) -> User:
+        ) -> DomainUser:
         domain_user = None
         domain_user = await self.repo.get_by_telegram_id(tg_user.id)
 
         if domain_user is None:
             logger.info('[get_or_create_user] User not found, creating new one.')
-            domain_user = User(
+            domain_user = DomainUser(
                 tg_id=tg_user.id,
                 name=tg_user.first_name,
                 username=tg_user.username,
@@ -31,6 +38,60 @@ class UserService:
             await self.repo.save_or_update(domain_user)
 
         else:
-            self.repo.mark_seen(domain_user._tg_id)
+            await self.repo.mark_seen(domain_user._tg_id)
 
         return domain_user
+    
+    async def list_users(self, tg_id: int) -> list[DomainUser]:
+        '''Возвращает список зарегистрированных пользователей.
+        Параметр: Телеграм-идентификатор пользователя
+
+        0) берет из БД пользователя, запросившего список,
+        1) Проверяет,
+        2) запрашивает список пользователей из репозитория;
+        3) проверяет и фильтрует список.
+        '''
+        local_id = 'list_users'
+        
+        user = await self.repo.get_by_telegram_id(tg_id)
+        self._check_user(user, [Permission.VIEW_DETAILED_STATS])
+        try:
+            users = await self.repo.get_all_users()
+        except SQLAlchemyError as e:
+            msg = str(e)
+            logger.warning(f'[{local_id}] Infrastructure error:\n{msg}')
+            raise UserServiceError('Failed to retrieve user list.')
+        
+        filtered_users = [
+            u for u in users
+            if isinstance(u, DomainUser)
+        ]
+
+        return filtered_users
+
+    def _check_user(
+            self,
+            user: DomainUser,
+            required_permissions: list[Permission],
+        ) -> None:
+        '''Проверяет пользователя на блокировку и права.
+        Параметры: доменный пользователь, список требуемых прав.
+
+        1) сначала просто на None,
+        2) если владелец — дальше не проверяем,
+        3) на блокировку,
+        4) на все перечисленные права.
+
+        Бросает исключения в соответствии с проблемой.
+        '''
+        if user is None:
+            raise UserNotFoundError(f'User (Telegram id = {id}) not found.')
+        id = user.tg_id
+        if user.is_owner:
+            return
+        if user.blocked:
+            raise UserBlockedError(f'User (Telegram id = {id}) is blocked.')
+        if not isinstance(required_permissions, list):
+            raise UserServiceError('_check_user: required_permissions should be of type list.')
+        if not user.has_permission(required_permissions):
+            raise AccessDeniedError(f'User (Telegram id = {id}) has no permission: {required_permissions}.')

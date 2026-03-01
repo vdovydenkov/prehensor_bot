@@ -4,7 +4,6 @@ from sqlalchemy import String, Integer, Boolean, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from bot.infra.db import Base
-from bot.domain.models.user_role import UserRole
 
 class UserORM(Base):
     __tablename__ = "users"

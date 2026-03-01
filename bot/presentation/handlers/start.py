@@ -1,4 +1,4 @@
-# bot/handlers/start.py
+# bot/presentation/handlers/start.py
 
 import logging
 logger = logging.getLogger('prehensor')
@@ -9,7 +9,6 @@ from telegram.ext import ContextTypes
 from bot.core.messenger import send_to_chat
 from bot.infra.config.configurator import Cfg
 from bot.infra.config.defaults import DEFAULT_RAW_CONFIG
-from bot.domain.models.user import User
 
 async def start_command(
         update: Update,
@@ -24,7 +23,7 @@ async def start_command(
 
     service = context.bot_data.get('service')
     if service is None:
-        logger.warning(f'[{local_id}] User service is None.')
+        logger.error(f'[{local_id}] User service is None!')
         return
 
     user = await service.get_or_create_user(

@@ -3,15 +3,17 @@ from datetime import datetime, timezone
 from typing import Optional
 
 from bot.domain.models.user_role import UserRole
+from bot.domain.models.permissions import Permission
+from bot.domain.models.role_permission import ROLE_PERMISSIONS
 
-class User:
+class DomainUser:
     def __init__(
         self,
         tg_id: int,
         name: Optional[str] = None,
         username: Optional[str] = None,
         language: Optional[str] = None,
-        role: UserRole = UserRole.user,
+        role: UserRole = UserRole.USER,
         blocked: bool = False,
     ) -> None:
 
@@ -28,12 +30,64 @@ class User:
         self._role = role
         self._blocked = blocked
 
-    def update_profile(self, name: str | None, username: str | None) -> None:
-        self._name = name
-        self._username = username
+    @property
+    def tg_id(self) -> int:
+        return self._tg_id
+
+    @tg_id.setter
+    def tg_id(self, value: int) -> None:
+        self._tg_id = value
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @name.setter
+    def name(self, value: str) -> None:
+        self._name = value
+
+    @property
+    def username(self):
+        return self._username
+
+    @username.setter
+    def username(self, value):
+        self._username = value
+
+
+    @property
+    def language(self):
+        return self._language
+
+    @language.setter
+    def language(self, value):
+        self._language = value
+
+
+    @property
+    def role(self) -> UserRole:
+        return self._role
+
+    @role.setter
+    def role(self, value: UserRole):
+        self._role = value
+
+    @property
+    def blocked(self) -> bool:
+        return self._blocked
+
+    @blocked.setter
+    def blocked(self, value: bool):
+        self._blocked = value
 
     def block(self) -> None:
         self._blocked = True
 
     def unblock(self) -> None:
         self._blocked = False
+
+    def is_owner(self) -> bool:
+        return self._role == UserRole.OWNER
+
+    def has_permission(self, permission: Permission) -> bool:
+        return permission in ROLE_PERMISSIONS[self.role]
