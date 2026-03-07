@@ -1,12 +1,13 @@
 # bot/handlers/download.py
 
-import logging
-logger = logging.getLogger('prehensor')
-
 from telegram import Update
 from telegram.ext import ContextTypes
+
 from bot.core.fetcher import fetch_url
 from bot.core.messenger import send_media, send_to_chat
+
+import logging
+logger = logging.getLogger('prehensor')
 
 async def download_command(
         update: Update,

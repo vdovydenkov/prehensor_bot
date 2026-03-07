@@ -3,7 +3,7 @@
 from pathlib import Path
 
 # Корневой каталог бота
-BOT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+BOT_ROOT = Path(__file__).resolve().parent.parent.parent
 
 # Пути к файлам
 ETC_ENV_PATH   = Path('/etc/prehensor_bot/.env')

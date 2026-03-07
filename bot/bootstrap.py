@@ -3,7 +3,7 @@ from telegram.ext import ApplicationBuilder
 from telegram.request import HTTPXRequest
 
 from bot.presentation.common.error_handler import error_handler
-from bot.infra.config.configurator import Cfg
+from bot.config.configurator import Cfg
 from bot.infra.repositories.sqlite_user_repository import SqliteUserRepository
 from bot.application.user_service import UserService
 from bot.presentation.handlers import register_handlers

@@ -1,20 +1,19 @@
-# bot/infra/config/configurator.py
-
-from bot.infra.config.constants import YAML_SETTINGS
-
-import logging
-logger = logging.getLogger('prehensor')
+# bot/config/configurator.py
 
 import os
 from pathlib import Path
 from dotenv import load_dotenv
-from typing import Optional
-from pydantic import BaseModel
 import yaml
 
-from bot.infra.config.defaults import DEFAULT_RAW_CONFIG
-from bot.infra.config.constants import ETC_ENV_PATH, LOCAL_ENV_PATH
-from bot.infra.config.models import YAMLSettings
+from bot.config.constants import (
+    ETC_ENV_PATH,
+    LOCAL_ENV_PATH,
+    YAML_SETTINGS,
+)
+from bot.config.defaults import DEFAULT_RAW_CONFIG
+from bot.config.models import YAMLSettings
+import logging
+logger = logging.getLogger('prehensor')
 
 # Загрузка .env для токена
 def init_env() -> bool:
@@ -69,7 +68,7 @@ def load_yaml_config(path: Path = None) -> YAMLSettings:
         with path.open("r", encoding="utf-8") as f:
             raw = yaml.safe_load(f)
     else:
-        logger.info(f"{path} не нашли, используем встроенные дефолтные настройки.")
+        logger.warning(f"{path} не нашли, используем встроенные дефолтные настройки.")
         raw = DEFAULT_RAW_CONFIG
         save_yaml_config(YAMLSettings.model_validate(raw), path)
     return YAMLSettings.model_validate(raw)

@@ -1,13 +1,14 @@
 # /bot/handlers/help.py
 
-import logging
-logger = logging.getLogger('prehensor')
-
 from telegram import Update
 from telegram.ext import ContextTypes
+
 from bot.core.messenger import send_to_chat
-from bot.infra.config.configurator import Cfg
-from bot.infra.config.defaults import DEFAULT_RAW_CONFIG
+from bot.config.configurator import Cfg
+from bot.config.defaults import DEFAULT_RAW_CONFIG
+
+import logging
+logger = logging.getLogger('prehensor')
 
 async def help_command(
         update: Update,

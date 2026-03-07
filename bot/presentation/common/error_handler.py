@@ -7,7 +7,7 @@ from telegram.error import (
     InvalidToken,
     NetworkError,
 )
-from bot.infra.config.defaults import DEFAULT_RAW_CONFIG
+from bot.config.defaults import DEFAULT_RAW_CONFIG
 import logging
 logger = logging.getLogger('prehensor')
 

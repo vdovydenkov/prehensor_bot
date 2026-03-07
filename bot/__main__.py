@@ -2,7 +2,7 @@
 import logging
 from bot.bootstrap import bot_init, logger_init
 from bot.setup_logging import add_file_handlers
-from bot.infra.config.configurator import Cfg
+from bot.config.configurator import Cfg
 
 
 def main():

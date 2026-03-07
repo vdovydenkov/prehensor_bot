@@ -1,16 +1,15 @@
 # bot/core/fetcher.py
 
-import logging
-logger = logging.getLogger('prehensor')
-
 import asyncio
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from bot.infra.config.configurator import Cfg
 from bot.core.messenger import send_to_chat
 from bot.services.media_downloader import get_media_from_url
 from bot.utils.format import format_bytes
+
+import logging
+logger = logging.getLogger('prehensor')
 
 def process_hook(
         data,
@@ -18,7 +17,7 @@ def process_hook(
         chat_id: int,
         event_loop: asyncio.AbstractEventLoop
     ):
-    logger.debug(f'process_hook получил данные.')
+    logger.debug('process_hook получил данные.')
     cfg = context.bot_data['cfg']
 
     async def send_progress(data):
@@ -46,7 +45,7 @@ def process_hook(
         elif status == 'finished':
             download_info = format_bytes(downloaded)
             progress = f'{download_info} {cfg.msg.download_completed} {cfg.msg.send_file}'
-            logger.debug(f'Статус=finished')
+            logger.debug('Статус=finished')
             await send_to_chat(
                 chat_id,
                 context.bot,
@@ -61,7 +60,7 @@ def process_hook(
             event_loop
         )
     else:
-        logger.debug(f'Не задан или закрыт event_loop.')
+        logger.debug('Не задан или закрыт event_loop.')
 
 def get_ydl_options(
         update: Update,
@@ -134,8 +133,8 @@ async def fetch_url(
         logger.info(f'[{username}] Стартуем запрос к ydl. Ссылка: {url}')
         # get_media_from_url вызывается в потоке, loop передан заранее
         info = await asyncio.to_thread(get_media_from_url, url, ydl_options, download)
-    except ValueError as e:
-        logger.error(f'[{username}] запрошен плейлист.')
+    except ValueError:
+        logger.error(f'[{username}] запрошен плейлист, вместо отдельного файла.')
         await send_to_chat(
             chat_id,
             context.bot,

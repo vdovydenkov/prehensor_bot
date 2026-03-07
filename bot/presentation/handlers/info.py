@@ -1,11 +1,12 @@
 # bot/handlers/info.py
 
-import logging
-logger = logging.getLogger('prehensor')
-
 from telegram import Update
 from telegram.ext import ContextTypes
+
 from bot.core.messenger import send_media_info
+
+import logging
+logger = logging.getLogger('prehensor')
 
 async def info_command(
         update: Update,

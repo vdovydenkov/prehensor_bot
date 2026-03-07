@@ -1,11 +1,10 @@
-# bot/core/log_reporter.py
+# bot/setup_logging.py
 
 import logging
 from logging.handlers import RotatingFileHandler
-import os
 from pathlib import Path
 
-from bot.infra.config.constants import (
+from bot.config.constants import (
     DEBUG_LOG,
     ERRORS_LOG,
     LOG_MSG_FMT,

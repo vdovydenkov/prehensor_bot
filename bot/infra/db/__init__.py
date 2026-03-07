@@ -3,10 +3,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
-    AsyncSession,
 )
 from sqlalchemy.orm import DeclarativeBase
-from bot.infra.config.constants import DB_URL
+
+from bot.config.constants import DB_URL
 
 engine = create_async_engine(
     DB_URL,
