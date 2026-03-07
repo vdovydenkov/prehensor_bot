@@ -1,8 +1,4 @@
 # bot/presentation/handlers/start.py
-
-import logging
-logger = logging.getLogger('prehensor')
-
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -10,11 +6,14 @@ from bot.core.messenger import send_to_chat
 from bot.infra.config.configurator import Cfg
 from bot.infra.config.defaults import DEFAULT_RAW_CONFIG
 
+import logging
+logger = logging.getLogger('prehensor')
+
 async def start_command(
         update: Update,
         context: ContextTypes.DEFAULT_TYPE
     ) -> None:
-    local_id = f'start_command'
+    local_id = 'start_command'
 
     chat_id = update.effective_chat.id
     if chat_id is None:
@@ -30,11 +29,10 @@ async def start_command(
         update.effective_user
     )
 
-    username = update.effective_user.first_name or 'Anonym'
     user_msg = update.message.text
 
     # Идентификатор для логгера - добавляем имя пользователя
-    local_id = f'start_command:{username}'
+    local_id = f'start_command:{user.name}'
 
     logger.info(f'[{local_id}] user_msg={user_msg}')
 
@@ -62,5 +60,5 @@ async def start_command(
     await send_to_chat(
         chat_id,
         context.bot,
-        f"{username}, {text}"
+        f"{user.name}, {text}"
     )

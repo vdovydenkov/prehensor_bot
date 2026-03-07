@@ -1,32 +1,26 @@
 # bot/__main__.py
-
-from bot.core.log_reporter import (
-    set_logger,
-    add_console_handler,
-    add_file_handlers
-)
-
-logger = set_logger('prehensor')
-add_console_handler(logger)
-logger.info('Консольный логгер инициализирован.')
-
-from bot.bootstrap import bot_init
-from bot.presentation.common.error_handler import error_handler
+import logging
+from bot.bootstrap import bot_init, logger_init
+from bot.setup_logging import add_file_handlers
 from bot.infra.config.configurator import Cfg
 
+
 def main():
+    logger_init()
+    logger = logging.getLogger('prehensor')
     logger.info('Загружаем конфигурацию.')
     try:
         cfg = Cfg()
         logger.info('Конфигурация бота успешно загружена.')
     except Exception:
-        logger.info('Ошибка при загрузке конфигурации!', exc_info=True)
+        logger.error('Ошибка при загрузке конфигурации!', exc_info=True)
     if cfg.debug_mode:
         logger.info('Включен отладочный режим!')
     # Включаем файловые логи - отладочный и лог ошибок
     add_file_handlers(logger, cfg.log_dir)
     logger.info(f'Включили файловое логирование в папку: {cfg.log_dir}')
 
+    logger.info('Запускаем бота.')
     bot_init(cfg)
 
     logger.info('Завершаемся.')

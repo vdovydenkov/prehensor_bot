@@ -9,6 +9,12 @@ from bot.core.messenger import send_to_chat
 from bot.infra.config.configurator import Cfg
 from bot.infra.config.defaults import DEFAULT_RAW_CONFIG
 from bot.presentation.formaters.list_formater import format_list
+from bot.application.exceptions import (
+    UserServiceError,
+    UserNotFoundError,
+    UserBlockedError,
+    AccessDeniedError,
+)
 
 async def statistic_command(
         update: Update,
@@ -35,15 +41,32 @@ async def statistic_command(
 
     logger.info(f'[{local_id}] user_msg={user_msg}')
 
+    msg_to_user = None
     try:
         users = await service.list_users(tg_user.id)
-        text = format_list(users)
+        msg_to_user = format_list(users)
+    except UserNotFoundError as e:
+        msg = str(e)
+        logger.warning(msg)
+        msg_to_user = 'Возникла ошибка при получении статистики.'
+    except UserBlockedError as e:
+        msg = str(e)
+        logger.warning(msg)
+        msg_to_user = 'Ваш доступ заблокирован. Вы не можете выполнять никаких действий.'
+    except AccessDeniedError as e:
+        msg = str(e)
+        logger.warning(msg)
+        msg_to_user = 'У вас нет прав на просмотр статистики.'
+    except UserServiceError as e:
+        msg = str(e)
+        logger.warning(msg)
+        msg_to_user = 'Возникла ошибка при формировании статистики.'
     except Exception as e:
         logger.error("Formatter error", exc_info=e)
-        text = "Возникла ошибка при формировании списка пользователей."
+        msg_to_user = "Возникла ошибка при формировании списка пользователей."
 
     await send_to_chat(
         chat_id,
         context.bot,
-        text,
+        msg_to_user,
     )

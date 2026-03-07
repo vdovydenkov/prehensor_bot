@@ -1,7 +1,4 @@
 # bot/infra/repositories/sqlite_user_repository.py
-import logging
-logger = logging.getLogger('prehensor')
-
 from typing import Optional
 from datetime import datetime, timezone
 from sqlalchemy import select, update, func
@@ -13,6 +10,8 @@ from bot.infra.db.models.user_orm import UserORM
 from bot.domain.models.user_role import UserRole
 from bot.domain.models.user import DomainUser
 from bot.infra.exceptions import ORMUserNotFound
+import logging
+logger = logging.getLogger('prehensor')
 
 class SqliteUserRepository(UserRepository):
 

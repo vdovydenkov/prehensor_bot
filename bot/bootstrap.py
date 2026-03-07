@@ -1,17 +1,21 @@
 # bot\bootstrap.py
-
-import logging
-logger = logging.getLogger('prehensor')
-
 from telegram.ext import ApplicationBuilder
 from telegram.request import HTTPXRequest
 
 from bot.presentation.common.error_handler import error_handler
 from bot.infra.config.configurator import Cfg
-from bot.infra.repositories.user_repository import UserRepository
 from bot.infra.repositories.sqlite_user_repository import SqliteUserRepository
 from bot.application.user_service import UserService
 from bot.presentation.handlers import register_handlers
+from bot.setup_logging import (
+    set_logger,
+    add_console_handler,
+)
+
+def logger_init() -> None:
+    logger = set_logger('prehensor')
+    add_console_handler(logger)
+    logger.info('Консольный логгер инициализирован.')
 
 def bot_init(config: Cfg = None) -> None:
     '''
@@ -50,5 +54,4 @@ def bot_init(config: Cfg = None) -> None:
     service = UserService(repo)
     app.bot_data['service'] = service
 
-    logger.info('Запускаем бота.')
     app.run_polling()

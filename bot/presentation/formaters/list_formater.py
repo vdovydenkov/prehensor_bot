@@ -1,10 +1,9 @@
 # bot/presentation/list_formater.py
+from bot.domain.models.user import DomainUser
+from bot.presentation.common.exceptions import PresentationLayerError
 import logging
 logger = logging.getLogger('prehensor')
 
-from bot.domain.models.user import DomainUser
-from bot.domain.models.user_role import UserRole
-from bot.presentation.common.exceptions import PresentationLayerError
 
 def format_list(users: list[DomainUser]) -> str:
     '''Принимает список domain User,

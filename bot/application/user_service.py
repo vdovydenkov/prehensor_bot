@@ -1,11 +1,7 @@
 # bot/application/user_service.py
-import logging
-logger = logging.getLogger('prehensor')
-
 import telegram
 from sqlalchemy.exc import SQLAlchemyError
 
-from bot.infra.exceptions import DatabaseError
 from bot.infra.repositories.user_repository import UserRepository
 from bot.domain.models.user import DomainUser
 from bot.domain.models.permissions import Permission
@@ -15,6 +11,9 @@ from bot.application.exceptions import (
     UserBlockedError,
     AccessDeniedError,
 )
+import logging
+logger = logging.getLogger('prehensor')
+
 
 class UserService:
     def __init__(self, user_repo: UserRepository) -> None:
@@ -85,7 +84,7 @@ class UserService:
         Бросает исключения в соответствии с проблемой.
         '''
         if user is None:
-            raise UserNotFoundError(f'User (Telegram id = {id}) not found.')
+            raise UserNotFoundError('User is empty.')
         id = user.tg_id
         if user.is_owner:
             return

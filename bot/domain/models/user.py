@@ -1,5 +1,4 @@
 # bot/domain/models/user.py
-from datetime import datetime, timezone
 from typing import Optional
 
 from bot.domain.models.user_role import UserRole
@@ -19,8 +18,6 @@ class DomainUser:
 
         if tg_id <= 0:
             raise ValueError("tg_id must be positive")
-
-        now = datetime.now(timezone.utc)
 
         self._user_id: Optional[int] = None
         self._tg_id = tg_id

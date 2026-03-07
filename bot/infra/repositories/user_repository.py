@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 from bot.domain.models.user import DomainUser
-from bot.infra.db.models.user_orm import UserORM
 
 
 class UserRepository(ABC):

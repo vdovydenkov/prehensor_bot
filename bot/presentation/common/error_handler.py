@@ -1,17 +1,15 @@
 # bot/presentation/common/error_handler.py
 
-import logging
-logger = logging.getLogger('prehensor')
-
-import asyncio
-
 from telegram import Update
 from telegram.ext import ContextTypes
 from telegram.error import (
-    TelegramError, Conflict, InvalidToken, NetworkError
+    Conflict,
+    InvalidToken,
+    NetworkError,
 )
-
 from bot.infra.config.defaults import DEFAULT_RAW_CONFIG
+import logging
+logger = logging.getLogger('prehensor')
 
 async def error_handler(
         update: Update,
