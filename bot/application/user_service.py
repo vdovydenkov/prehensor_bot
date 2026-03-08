@@ -1,9 +1,11 @@
 # bot/application/user_service.py
 import telegram
 from sqlalchemy.exc import SQLAlchemyError
+from collections.abc import Sequence
 
 from bot.infra.repositories.user_repository import UserRepository
 from bot.domain.models.user import DomainUser
+from bot.domain.models.user_role import UserRole
 from bot.domain.models.permissions import Permission
 from bot.application.exceptions import (
     UserServiceError,
@@ -68,10 +70,17 @@ class UserService:
 
         return filtered_users
 
+    async def set_as_owner(self, user: DomainUser) -> None:
+        '''Отдельный метод для установки прав владельца.'''
+        if user.is_owner:
+            return
+        user.role = UserRole.OWNER
+        await self.repo.save_or_update(user)
+
     def _check_user(
             self,
             user: DomainUser,
-            required_permissions: list[Permission],
+            required_permissions: Sequence[Permission],
         ) -> None:
         '''Проверяет пользователя на блокировку и права.
         Параметры: доменный пользователь, список требуемых прав.
@@ -85,12 +94,15 @@ class UserService:
         '''
         if user is None:
             raise UserNotFoundError('User is empty.')
-        id = user.tg_id
         if user.is_owner:
             return
         if user.blocked:
-            raise UserBlockedError(f'User (Telegram id = {id}) is blocked.')
-        if not isinstance(required_permissions, list):
-            raise UserServiceError('_check_user: required_permissions should be of type list.')
-        if not user.has_permission(required_permissions):
-            raise AccessDeniedError(f'User (Telegram id = {id}) has no permission: {required_permissions}.')
+            raise UserBlockedError(
+                f'User (Telegram id = {user.tg_id}) is blocked.'
+            )
+        for perm in required_permissions:
+            if not user.has_permission(perm):
+                raise AccessDeniedError(
+                    f'{user.role.value} {user.name} (id={user.tg_id}) '
+                    f'has no permission: {perm}.'
+                )

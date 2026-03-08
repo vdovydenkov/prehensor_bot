@@ -13,11 +13,17 @@ class UserORM(Base):
         autoincrement=True,
         primary_key=True
     )
+
     tg_id: Mapped[int] = mapped_column(
         Integer,
         unique=True,
         index=True,
         nullable=False
+    )
+
+    last_chat_id: Mapped[int | None] = mapped_column(
+        Integer,
+        nullable=True,
     )
 
     name: Mapped[str | None] = mapped_column(

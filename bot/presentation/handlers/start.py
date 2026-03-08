@@ -49,10 +49,13 @@ async def start_command(
             text = 'привет!\n' \
             'Я бот-выцеплятор. Мне можно дать ссылку, по которой я скачаю медиа-файл.\n' \
             'Набери /help, чтобы узнать подробнее.'
-    else:
+    else:  # С конфигом всё в порядке
         text = cfg.msg.start_text
+        # Если id владельца из конфигурации совпадает с id пользователя
+        if cfg.owner_id == user.tg_id:
+            await service.set_as_owner(user)
+            text += '\nВладелец опознан!'
 
-    # {cfg.msg.start_text}
     # сброс пользовательских данных
     context.user_data.clear()
     context.user_data['user_cfg'] = cfg.user

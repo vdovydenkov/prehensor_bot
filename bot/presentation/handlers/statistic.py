@@ -30,18 +30,19 @@ async def statistic_command(
         logger.error(f'[{local_id}] User service is None!')
         return
 
-    tg_user = update.effective_user
-    username = tg_user.first_name or 'Anonym'
+    user = await service.get_or_create_user(
+        update.effective_user
+    )
     user_msg = update.message.text
 
     # Идентификатор для логгера - добавляем имя пользователя
-    local_id = f'statistic_command:{username}'
+    local_id = f'statistic_command:{user.name}'
 
     logger.info(f'[{local_id}] user_msg={user_msg}')
 
     msg_to_user = None
     try:
-        users = await service.list_users(tg_user.id)
+        users = await service.list_users(user.tg_id)
         msg_to_user = format_list(users)
     except UserNotFoundError as e:
         msg = str(e)

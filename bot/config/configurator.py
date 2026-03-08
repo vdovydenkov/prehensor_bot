@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import yaml
 
 from bot.config.constants import (
+    BOT_ROOT,
     ETC_ENV_PATH,
     LOCAL_ENV_PATH,
     YAML_SETTINGS,
@@ -79,11 +80,14 @@ class Cfg:
         if not init_env():
             logger.critical('Нет .env, нет токена. Выгружаюсь!')
             exit(1)
-        self.tg_token = os.environ.get("TG_TOKEN")
+        self.tg_token = os.environ.get('TG_TOKEN')
         if not self.tg_token:
             logger.critical('.env считался, но токен отсутствует. Выгружаюсь!')
             exit(1)
-        self.debug_mode = os.environ.get("DEBUG_MODE")
+        self.debug_mode = os.environ.get('DEBUG_MODE')
+        owner_id = os.environ.get('OWNER_ID', '')
+        # owner_id не может быть отрицательным!
+        self.owner_id = int(owner_id) if owner_id.isdigit() else 0
         # Загружаем YAML-конфиг
         cfg = load_yaml_config()
         self.user = cfg.user_defaults
@@ -95,7 +99,7 @@ class Cfg:
         # Готовим каталоги
         self.log_dir = self._ensure_dir(self.sys.log_dir)
         self.temp_dir = self._ensure_dir(self.sys.temp_dir)
-        tmp = Path(__file__).parent.parent.parent / self.sys.temp_dir
+        tmp = BOT_ROOT / self.sys.temp_dir
         self.cache_dir = self._ensure_dir(tmp / 'cache')
         # ~user_id~ позже заменим на id пользователя
         self.outtmpl = str(tmp / "media_~user_id~_%(id)s.%(ext)s")
@@ -106,6 +110,9 @@ class Cfg:
             try:
                 path.mkdir(parents=True, exist_ok=True)
                 logger.debug(f"Создан каталог: {path}")
-            except Exception:
-                logger.warning(f"Не создан каталог: {path}")
+            except Exception as e:
+                msg = str(e)
+                logger.warning(
+                    f"Ошибка при создании каталога: {path}\n{msg}"
+                )
         return str(path.resolve())
