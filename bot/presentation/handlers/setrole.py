@@ -28,10 +28,11 @@ async def set_role_command(
 
     user_msg = update.message.text
     if not user_msg:
+        logger.error(f'[{local_id}] update.message.text is empty.')
         return
 
-    user = await service.get_or_create_user(
-        update.effective_user
+    user = await service.get_user_by_id(
+        update.effective_user.id
     )
 
     # Идентификатор для логгера - добавляем имя пользователя
