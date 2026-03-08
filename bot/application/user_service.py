@@ -27,6 +27,12 @@ class UserService:
     def __init__(self, user_repo: UserRepository) -> None:
         self.repo = user_repo
 
+    async def get_user_by_id(
+            self,
+            tg_id: int,
+        ) -> DomainUser:
+        return await self.repo.get_by_telegram_id(tg_id)
+
     async def get_or_create_user(
             self,
             tg_user: telegram.User
@@ -49,7 +55,10 @@ class UserService:
 
         return domain_user
     
-    async def list_users(self, tg_id: int) -> list[DomainUser]:
+    async def list_users(
+            self,
+            requesting_user: DomainUser
+        ) -> list[DomainUser]:
         '''Возвращает список зарегистрированных пользователей.
         Параметр: Телеграм-идентификатор пользователя
 
@@ -60,8 +69,7 @@ class UserService:
         '''
         local_id = 'list_users'
         
-        user = await self.repo.get_by_telegram_id(tg_id)
-        self._check_user(user, [Permission.VIEW_DETAILED_STATS])
+        self._check_user(requesting_user, [Permission.VIEW_DETAILED_STATS])
         try:
             users = await self.repo.get_all_users()
         except SQLAlchemyError as e:
@@ -76,7 +84,10 @@ class UserService:
 
         return filtered_users
 
-    async def set_as_owner(self, user: DomainUser) -> None:
+    async def set_as_owner(
+            self,
+            user: DomainUser
+        ) -> None:
         '''Отдельный метод для установки прав владельца.'''
         if user.is_owner:
             return

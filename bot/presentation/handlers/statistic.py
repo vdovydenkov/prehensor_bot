@@ -30,42 +30,46 @@ async def statistic_command(
         logger.error(f'[{local_id}] User service is None!')
         return
 
-    user = await service.get_or_create_user(
-        update.effective_user
-    )
     user_msg = update.message.text
+    if not user_msg:
+        logger.error(f'[{local_id}] update.message.text is empty!')
+        return
+
+    user = await service.get_user_by_id(
+        update.effective_user.id
+    )
 
     # Идентификатор для логгера - добавляем имя пользователя
     local_id = f'statistic_command:{user.name}'
 
     logger.info(f'[{local_id}] user_msg={user_msg}')
 
-    msg_to_user = None
+    msg_for_user = None
     try:
-        users = await service.list_users(user.tg_id)
-        msg_to_user = format_list(users)
+        users = await service.list_users(user)
+        msg_for_user = format_list(users)
     except UserNotFoundError as e:
         msg = str(e)
         logger.warning(msg)
-        msg_to_user = 'Возникла ошибка при получении статистики.'
+        msg_for_user = 'Возникла ошибка при получении статистики.'
     except UserBlockedError as e:
         msg = str(e)
         logger.warning(msg)
-        msg_to_user = 'Ваш доступ заблокирован. Вы не можете выполнять никаких действий.'
+        msg_for_user = 'Ваш доступ заблокирован. Вы не можете выполнять никаких действий.'
     except AccessDeniedError as e:
         msg = str(e)
         logger.warning(msg)
-        msg_to_user = 'У вас нет прав на просмотр статистики.'
+        msg_for_user = 'У вас нет прав на просмотр статистики.'
     except UserServiceError as e:
         msg = str(e)
         logger.warning(msg)
-        msg_to_user = 'Возникла ошибка при формировании статистики.'
+        msg_for_user = 'Возникла ошибка при формировании статистики.'
     except Exception as e:
         logger.error("Formatter error", exc_info=e)
-        msg_to_user = "Возникла ошибка при формировании списка пользователей."
+        msg_for_user = "Возникла ошибка при формировании списка пользователей."
 
     await send_to_chat(
         chat_id,
         context.bot,
-        msg_to_user,
+        msg_for_user,
     )
