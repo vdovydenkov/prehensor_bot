@@ -11,3 +11,6 @@ class UserBlockedError(AccessDeniedError):
 
 class UserNotFoundError(UserServiceError):
     pass
+
+class RoleNotFoundError(UserServiceError):
+    pass

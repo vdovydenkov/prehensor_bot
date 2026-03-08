@@ -3,6 +3,11 @@ import telegram
 from sqlalchemy.exc import SQLAlchemyError
 from collections.abc import Sequence
 
+from bot.config.constants import (
+    MAX_ROLE_LENGTH,
+    MIN_ROLE_LENGTH,
+)
+
 from bot.infra.repositories.user_repository import UserRepository
 from bot.domain.models.user import DomainUser
 from bot.domain.models.user_role import UserRole
@@ -12,6 +17,7 @@ from bot.application.exceptions import (
     UserNotFoundError,
     UserBlockedError,
     AccessDeniedError,
+    RoleNotFoundError,
 )
 import logging
 logger = logging.getLogger('prehensor')
@@ -77,6 +83,39 @@ class UserService:
         user.role = UserRole.OWNER
         await self.repo.save_or_update(user)
 
+    async def set_role(
+            self,
+            user: DomainUser,
+            target_role: str
+        ) -> UserRole:
+        '''Устанавливает заданную роль переданному пользователю.
+        Роль OWNER игнорируется.
+        '''
+
+        role_length = len(target_role)
+        if role_length < MIN_ROLE_LENGTH or role_length > MAX_ROLE_LENGTH:
+            raise RoleNotFoundError(
+                f'Role length ({role_length}) '
+                f'is out of range [{MIN_ROLE_LENGTH}..{MAX_ROLE_LENGTH}].'
+            )
+
+        try:
+            new_role = UserRole[target_role]
+        except KeyError:
+            raise RoleNotFoundError(
+                f'Role "{target_role}" not found ({user.name}:{user.tg_id}).'
+            )
+
+        if new_role == UserRole.OWNER:
+            raise RoleNotFoundError(
+                'Tried to set owner role.'
+            )
+
+        user.role = new_role
+        await self.repo.save_or_update(user)
+
+        return user.role
+        
     def _check_user(
             self,
             user: DomainUser,

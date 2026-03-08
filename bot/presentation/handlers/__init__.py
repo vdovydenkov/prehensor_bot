@@ -6,6 +6,7 @@ from .info import info_command
 from .download import download_command
 from .message_processor import message_processor
 from .statistic import statistic_command
+from .setrole import set_role_command
 
 def register_handlers(app):
     app.add_handler(
@@ -42,5 +43,11 @@ def register_handlers(app):
         CommandHandler(
             "statistic",
             statistic_command
+        )
+    )
+    app.add_handler(
+        CommandHandler(
+            "setrole",
+            set_role_command
         )
     )

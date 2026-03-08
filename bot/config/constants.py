@@ -21,3 +21,7 @@ LOG_BACKUPCOUNT = 2
 
 # Имена файлов
 YAML_SETTINGS = 'settings.yaml'
+
+# Длина названия роли
+MAX_ROLE_LENGTH: int = 30
+MIN_ROLE_LENGTH: int = 2
