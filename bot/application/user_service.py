@@ -19,6 +19,7 @@ from bot.application.exceptions import (
     AccessDeniedError,
     RoleNotFoundError,
 )
+
 import logging
 logger = logging.getLogger('prehensor')
 
@@ -125,7 +126,11 @@ class UserService:
         '''Устанавливает заданную роль переданному пользователю.
         Роль OWNER игнорируется.
         '''
-        self._check_user(user)
+
+        self._check_user(
+            user,
+            [Permission.MANAGE_USERS],
+        )
 
         role_length = len(target_role)
         if role_length < MIN_ROLE_LENGTH or role_length > MAX_ROLE_LENGTH:

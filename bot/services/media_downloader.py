@@ -2,8 +2,6 @@
 import logging
 logger = logging.getLogger('prehensor')
 
-import os
-import types
 import yt_dlp
 
 def get_media_from_url(

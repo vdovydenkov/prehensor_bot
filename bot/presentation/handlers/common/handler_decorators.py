@@ -5,7 +5,7 @@ from functools import wraps
 from telegram import Update, Chat, Message
 from telegram.ext import ContextTypes
 
-from bot.core.messenger import send_to_chat
+from bot.presentation.messaging.telegram_messenger import send_text
 from bot.application.exceptions import (
     UserServiceError,
     AccessDeniedError,
@@ -40,8 +40,8 @@ def handle_user_errors(func):
     ):
 
         msg_for_user    = 'Возникла ошибка при обработке команды. Администратор уведомлен.'
+        msg_for_warning = ''
         msg_for_error   = ''
-        msg_for_warning = 'Something wrong in command handlers.'
 
         user = update.effective_user
 
@@ -51,14 +51,6 @@ def handle_user_errors(func):
 
         try:
             return await func(update, context, *args, **kwargs)
-
-        except UserServiceError as e:
-            error_message = str(e)
-            msg_for_user  = 'Возникла ошибка при выполнении команды. Администратор уведомлен.'
-            msg_for_error = (
-                f'{user_label} UserService internal error.\n'
-                f'{error_message}'
-            )
 
         except AccessDeniedError:
             msg_for_user    = 'Недостаточно прав для выполнения команды.'
@@ -74,6 +66,14 @@ def handle_user_errors(func):
 
         except RoleNotFoundError:
             msg_for_user = 'Такой роли не существует.'
+        
+        except UserServiceError as e:
+            error_message = str(e)
+            msg_for_user  = 'Возникла ошибка при выполнении команды. Администратор уведомлен.'
+            msg_for_error = (
+                f'{user_label} UserService internal error.\n'
+                f'{error_message}'
+            )
 
         if msg_for_warning:
             # Добавляем в лог id чата, пользователя и сообщение из update
@@ -85,12 +85,12 @@ def handle_user_errors(func):
             )
 
             logger.warning(msg_for_warning)
-        elif msg_for_error:
-            logger.error(msg_for_error)
+        if msg_for_error:
+            logger.exception(msg_for_error)
 
-        await send_to_chat(
-            update.effective_chat.id,
+        await send_text(
             context.bot,
+            update.effective_chat.id,
             msg_for_user,
         )
     

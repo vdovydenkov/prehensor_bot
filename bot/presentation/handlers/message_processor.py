@@ -5,7 +5,8 @@ from telegram.ext import ContextTypes
 
 from bot.utils.validators import is_http_url
 from bot.core.fetcher import fetch_url
-from bot.core.messenger import send_to_chat, send_media_info
+from bot.presentation.messaging.telegram_messenger import send_text
+from bot.core.messenger import send_media_info
 from bot.config.configurator import Cfg
 from bot.config.defaults import DEFAULT_RAW_CONFIG
 from bot.presentation.handlers.common.handler_decorators import (
@@ -54,15 +55,15 @@ async def message_processor(
 
     logger.debug(f'[{local_id}] Проверяем http-валидатором.')
     if not is_http_url(ctx.message.text):
-        return await send_to_chat(
-            ctx.chat.id,
+        return await send_text(
             context.bot,
+            ctx.chat.id,
             command_or_link
         )
 
-    await send_to_chat(
-        ctx.chat.id,
+    await send_text(
         context.bot,
+        ctx.chat.id,
         check_link
     )
 
@@ -77,9 +78,9 @@ async def message_processor(
 
     if media_info is None:
         logger.warning(f'[{local_id}] media_info не получен от fetch_url.')
-        return await send_to_chat(
-            ctx.chat.id,
+        return await send_text(
             context.bot,
+            ctx.chat.id,
             'Информация о медиа не найдена.'
         )
 

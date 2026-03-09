@@ -4,7 +4,10 @@ import asyncio
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from bot.core.messenger import send_to_chat
+from bot.presentation.messaging.telegram_messenger  import (
+    send_text,
+    update_text,
+)
 from bot.services.media_downloader import get_media_from_url
 from bot.utils.format import format_bytes
 
@@ -37,20 +40,41 @@ def process_hook(
             if downloaded >= last_progress_value + step:
                 logger.debug(f'Прогресс преодолел шаг {step} байт, строка готова: {progress}')
                 context.user_data['last_progress_value'] = downloaded
-                await send_to_chat(
-                    chat_id,
-                    context.bot,
-                    progress
-                )
+                progress_msg_id = context.user_data.get('progress_message_id')
+                if progress_msg_id is None:
+                    msg = await send_text(
+                        context.bot,
+                        chat_id,
+                        progress
+                    )
+                    context.user_data['progress_message_id'] = msg.id
+                else:
+                    await update_text(
+                        context.bot,
+                        chat_id,
+                        progress_msg_id,
+                        progress,
+                    )
         elif status == 'finished':
             download_info = format_bytes(downloaded)
             progress = f'{download_info} {cfg.msg.download_completed} {cfg.msg.send_file}'
             logger.debug('Статус=finished')
-            await send_to_chat(
-                chat_id,
-                context.bot,
-                progress
-            )
+
+            progress_msg_id = context.user_data.get('progress_message_id')
+            if progress_msg_id is None:
+                msg = await send_text(
+                    context.bot,
+                    chat_id,
+                    progress
+                )
+            else:
+                await update_text(
+                    context.bot,
+                    chat_id,
+                    progress_msg_id,
+                    progress,
+                )
+
         elif status == 'error':
             error = data.get('error')
             logger.debug(f'В статусе данных в process_hook передана ошибка: {error}')
@@ -121,10 +145,12 @@ async def fetch_url(
     ydl_options = {}
     if download:
         context.user_data['last_progress_value'] = 0
+        context.user_data['progress_message_id'] = None
+
         ydl_options = get_ydl_options(update, context)
-        await send_to_chat(
-            chat_id,
+        await send_text(
             context.bot,
+            chat_id,
             cfg.msg.start_downloading
         )
     # Добавляем своего логгера
@@ -135,26 +161,26 @@ async def fetch_url(
         info = await asyncio.to_thread(get_media_from_url, url, ydl_options, download)
     except ValueError:
         logger.error(f'[{username}] запрошен плейлист, вместо отдельного файла.')
-        await send_to_chat(
-            chat_id,
+        await send_text(
             context.bot,
+            chat_id,
             f"{cfg.err.prefix} Это ссылка на плейлист, я пока их загружать не умею."
         )
         return None
     except Exception as e:
         msg = str(e)
         logger.error(f'[{username}] ошибка при вызове get_media_from_url: ', exc_info=True)
-        await send_to_chat(
-            chat_id,
+        await send_text(
             context.bot,
+            chat_id,
             f"{cfg.err.prefix} {msg}"
         )
         return None
     if not info:
         logger.error(f'[{username}] данные после запроса ydl пустые.')
-        await send_to_chat(
-            chat_id,
+        await send_text(
             context.bot,
+            chat_id,
             cfg.err.no_download_info
         )
     return info

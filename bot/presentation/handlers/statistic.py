@@ -3,7 +3,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from bot.core.messenger import send_to_chat
+from bot.presentation.messaging.telegram_messenger import send_text
 from bot.presentation.formaters.list_formater import format_list
 from bot.presentation.handlers.common.handler_decorators import (
     CommandContext,
@@ -27,8 +27,8 @@ async def statistic_command(
 
     msg_for_user = format_list(users)
 
-    await send_to_chat(
-        ctx.chat.id,
+    await send_text(
         context.bot,
+        ctx.chat.id,
         msg_for_user,
     )

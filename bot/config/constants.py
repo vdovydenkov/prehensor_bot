@@ -25,3 +25,6 @@ YAML_SETTINGS = 'settings.yaml'
 # Длина названия роли
 MAX_ROLE_LENGTH: int = 30
 MIN_ROLE_LENGTH: int = 2
+
+# Телеграмные константы
+MAX_TELEGRAM_MESSAGE_LENGTTH = 4 * 1024

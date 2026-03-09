@@ -2,7 +2,7 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 
-from bot.core.messenger import send_to_chat
+from bot.presentation.messaging.telegram_messenger import send_text
 from bot.config.configurator import Cfg
 from bot.config.defaults import DEFAULT_RAW_CONFIG
 from bot.presentation.handlers.common.handler_decorators import (
@@ -58,8 +58,8 @@ async def start_command(
     context.user_data.clear()
     context.user_data['user_cfg'] = cfg.user
 
-    await send_to_chat(
-        ctx.chat.id,
+    await send_text(
         context.bot,
+        ctx.chat.id,
         f"{ctx.domain_user.name}, {text}"
     )

@@ -4,7 +4,8 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from bot.core.fetcher import fetch_url
-from bot.core.messenger import send_media, send_to_chat
+from bot.core.messenger import send_media
+from bot.presentation.messaging.telegram_messenger import send_text
 from bot.presentation.handlers.common.handler_decorators import (
     CommandContext,
     handle_user_errors,
@@ -32,18 +33,18 @@ async def download_command(
     url = context.user_data.get('url')
     if not url:
         logger.warning(f'[{local_id}] url пустой.')
-        return await send_to_chat(
-            ctx.chat.id,
+        return await send_text(
             context.bot,
+            ctx.chat.id,
             cfg.msg.no_link
         )
 
     media_info = await fetch_url(url, update, context, download=True)
     if not media_info:
         logger.warning(f'[{local_id}] media_info не содержит данных.')
-        return await send_to_chat(
-            ctx.chat.id,
+        return await send_text(
             context.bot,
+            ctx.chat.id,
             cfg.err.download_failed,
         )
 

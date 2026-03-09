@@ -8,6 +8,7 @@ from telegram.error import (
     NetworkError,
 )
 from bot.config.defaults import DEFAULT_RAW_CONFIG
+
 import logging
 logger = logging.getLogger('prehensor')
 
