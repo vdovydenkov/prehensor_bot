@@ -1,7 +1,8 @@
-# bot/presentation/common/handler_decorators.py
+# bot/presentation/handlers/common/handler_decorators.py
 
+from dataclasses import dataclass
 from functools import wraps
-from telegram import Update
+from telegram import Update, Chat, Message
 from telegram.ext import ContextTypes
 
 from bot.core.messenger import send_to_chat
@@ -13,9 +14,20 @@ from bot.application.exceptions import (
     RoleNotFoundError,
 )
 
+from bot.application.user_service import UserService
+from bot.domain.models.user import DomainUser
+
 import logging
 logger = logging.getLogger("prehensor")
 
+@dataclass
+class CommandContext:
+    user_service: UserService
+    chat:         Chat
+    domain_user:  DomainUser
+    message:      Message
+
+# --- Decorators
 
 def handle_user_errors(func):
 
@@ -83,3 +95,64 @@ def handle_user_errors(func):
         )
     
     return wrapper
+
+
+def prepare_handler_context(func):
+
+    @wraps(func)
+    async def wrapper(
+        update: Update,
+        context: ContextTypes.DEFAULT_TYPE,
+        *args,
+        **kwargs
+    ):
+
+        chat = update.effective_chat
+        user = update.effective_user
+        msg  = update.effective_message
+
+        missing = []
+        if not chat:
+            missing.append('chat')
+        if not msg:
+            missing.append('message')
+        if not user:
+            missing.append('user')
+
+        if missing:
+            logger.warning(
+                'Update missing %s chat_id=%s user_id=%s msg=%s',
+                '/'.join(missing),
+                chat.id  if chat else None,
+                user.id  if user else None,
+                msg.text if msg  else None,
+            )
+            return
+
+        service: UserService = context.bot_data.get("service")
+        if not service:
+            logger.error(
+                'User service is not initialized. Chat_id=%s User_id=%s',
+                chat.id,
+                user.id,
+            )
+            return
+
+        domain_user = await service.get_user_by_id(user.id)
+
+        ctx = CommandContext(
+            service,
+            chat,
+            domain_user,
+            message=msg,
+        )
+        return await func(
+            update,
+            context,
+            ctx,
+            *args,
+            **kwargs
+        )
+
+    return wrapper
+

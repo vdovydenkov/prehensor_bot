@@ -8,27 +8,29 @@ from bot.core.fetcher import fetch_url
 from bot.core.messenger import send_to_chat, send_media_info
 from bot.config.configurator import Cfg
 from bot.config.defaults import DEFAULT_RAW_CONFIG
-from bot.presentation.common.handler_decorators import handle_user_errors
+from bot.presentation.handlers.common.handler_decorators import (
+    CommandContext,
+    handle_user_errors,
+    prepare_handler_context,
+)
+
 import logging
 logger = logging.getLogger('prehensor')
 
 @handle_user_errors
+@prepare_handler_context
 async def message_processor(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
+    update:  Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    ctx:     CommandContext,
 ) -> None:
-    chat_id = update.effective_chat.id
-    if chat_id is None:
-        logger.warning('message_processor: chat_id is None.')
-        return
+    ctx.user_service._check_user(
+        ctx.domain_user,
+    )
 
-    username = update.effective_user.first_name or 'Anonym'
-    user_msg = update.message.text
+    local_id = f'message_processor:{ctx.domain_user.name}'
 
-    # Идентификатор для логгера
-    local_id = f'message_processor:{username}'
-
-    logger.info(f'[{local_id}] user_msg={user_msg}')
+    logger.info(f'[{local_id}] message={ctx.message.text}')
 
     cfg = context.bot_data.get('cfg')
     if (cfg is None) or (not isinstance(cfg, Cfg)):
@@ -39,8 +41,8 @@ async def message_processor(
         msg = DEFAULT_RAW_CONFIG.get('msg')
         if msg is None:
             logger.error(
-                    f'[{local_id}] Не считались сообщения из DEFAULT_RAW_CONFIG.'
-                )
+                f'[{local_id}] Не считались сообщения из DEFAULT_RAW_CONFIG.'
+            )
             command_or_link = 'Нужно прислать или команду, или ссылку на медиа.'
             check_link = 'Проверяю что по ссылке.'
         else:
@@ -51,21 +53,23 @@ async def message_processor(
         check_link = cfg.msg.check_link
 
     logger.debug(f'[{local_id}] Проверяем http-валидатором.')
-    if not is_http_url(user_msg):
+    if not is_http_url(ctx.message.text):
         return await send_to_chat(
-            chat_id,
+            ctx.chat.id,
             context.bot,
             command_or_link
         )
 
     await send_to_chat(
-        chat_id,
+        ctx.chat.id,
         context.bot,
         check_link
     )
+
     logger.info(f'[{local_id}] Передаем ссылку в fetcher для получения информации.')
+
     media_info = await fetch_url(
-        user_msg, 
+        ctx.message.text,
         update,
         context,
         download=False
@@ -74,7 +78,7 @@ async def message_processor(
     if media_info is None:
         logger.warning(f'[{local_id}] media_info не получен от fetch_url.')
         return await send_to_chat(
-            chat_id,
+            ctx.chat.id,
             context.bot,
             'Информация о медиа не найдена.'
         )
@@ -82,10 +86,12 @@ async def message_processor(
     logger.debug(
         f'[{local_id}] Получили media_info от fetch_url, сохраняем в контекст и отправляем в messenger/send_media_info'
     )
+
     context.user_data['media_info'] = media_info
-    context.user_data['url'] = user_msg
+    context.user_data['url'] = ctx.message.text
+
     await send_media_info(
-        chat_id,
+        ctx.chat.id,
         context.bot,
         media_info,
         details=False

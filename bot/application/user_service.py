@@ -28,37 +28,52 @@ class UserService:
         self.repo = user_repo
 
     async def get_user_by_id(
-            self,
-            tg_id: int,
-        ) -> DomainUser:
+        self,
+        tg_id: int,
+    ) -> DomainUser:
         return await self.repo.get_by_telegram_id(tg_id)
 
-    async def get_or_create_user(
-            self,
-            tg_user: telegram.User
-        ) -> DomainUser:
+    async def create_user(
+        self,
+        tg_user: telegram.User
+    ) -> DomainUser:
+        local_id = 'UserService.create_user'
+
         domain_user = None
-        domain_user = await self.repo.get_by_telegram_id(tg_user.id)
+        domain_user = await self.get_user_by_id(tg_user.id)
 
-        if domain_user is None:
-            logger.info('[get_or_create_user] User not found, creating new one.')
-            domain_user = DomainUser(
-                tg_id=tg_user.id,
-                name=tg_user.first_name,
-                username=tg_user.username,
-                language=tg_user.language_code,
+        if domain_user:
+            logger.info(
+                '[%s] User (%s:%s) already exists.',
+                local_id,
+                domain_user.name,
+                domain_user.tg_id,
             )
-            await self.repo.save_or_update(domain_user)
+            return domain_user
 
-        else:
-            await self.repo.mark_seen(domain_user._tg_id)
+        logger.info(f'[{local_id}] User not found, creating new one.')
+
+        domain_user = DomainUser(
+            tg_id=tg_user.id,
+            name=tg_user.first_name,
+            username=tg_user.username,
+            language=tg_user.language_code,
+        )
+
+        await self.repo.save_or_update(domain_user)
+
+        logger.info(
+            f'[{local_id}] User successfuly created: "%s":%s',
+            domain_user.name,
+            domain_user.tg_id,
+        )
 
         return domain_user
     
     async def list_users(
-            self,
-            requesting_user: DomainUser
-        ) -> list[DomainUser]:
+        self,
+        requesting_user: DomainUser
+    ) -> list[DomainUser]:
         '''Возвращает список зарегистрированных пользователей.
         Параметр: Телеграм-идентификатор пользователя
 
@@ -67,9 +82,13 @@ class UserService:
         2) запрашивает список пользователей из репозитория;
         3) проверяет и фильтрует список.
         '''
+        self._check_user(
+            requesting_user,
+            [Permission.VIEW_DETAILED_STATS]
+        )
+
         local_id = 'list_users'
         
-        self._check_user(requesting_user, [Permission.VIEW_DETAILED_STATS])
         try:
             users = await self.repo.get_all_users()
         except SQLAlchemyError as e:
@@ -85,23 +104,28 @@ class UserService:
         return filtered_users
 
     async def set_as_owner(
-            self,
-            user: DomainUser
-        ) -> None:
+        self,
+        user: DomainUser
+    ) -> None:
         '''Отдельный метод для установки прав владельца.'''
+        self._check_user(user)
+
         if user.is_owner:
             return
+
         user.role = UserRole.OWNER
+
         await self.repo.save_or_update(user)
 
     async def set_role(
-            self,
-            user: DomainUser,
-            target_role: str
-        ) -> UserRole:
+        self,
+        user: DomainUser | None,
+        target_role: str
+    ) -> UserRole:
         '''Устанавливает заданную роль переданному пользователю.
         Роль OWNER игнорируется.
         '''
+        self._check_user(user)
 
         role_length = len(target_role)
         if role_length < MIN_ROLE_LENGTH or role_length > MAX_ROLE_LENGTH:
@@ -128,10 +152,11 @@ class UserService:
         return user.role
         
     def _check_user(
-            self,
-            user: DomainUser,
-            required_permissions: Sequence[Permission],
-        ) -> None:
+        self,
+        user: DomainUser | None,
+        # Если права не заданы, проверка будет пройдена с положительным результатом
+        required_permissions: Sequence[Permission] = [],
+    ) -> None:
         '''Проверяет пользователя на блокировку и права.
         Параметры: доменный пользователь, список требуемых прав.
 

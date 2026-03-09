@@ -5,38 +5,34 @@ from telegram.ext import ContextTypes
 from bot.core.messenger import send_to_chat
 from bot.config.configurator import Cfg
 from bot.config.defaults import DEFAULT_RAW_CONFIG
-from bot.presentation.common.handler_decorators import handle_user_errors
+from bot.presentation.handlers.common.handler_decorators import (
+    CommandContext,
+    handle_user_errors,
+    prepare_handler_context,
+)
 
 import logging
 logger = logging.getLogger('prehensor')
 
 @handle_user_errors
+@prepare_handler_context
 async def start_command(
-    update: Update,
-    context: ContextTypes.DEFAULT_TYPE
+    update:  Update,
+    context: ContextTypes.DEFAULT_TYPE,
+    ctx:     CommandContext,
 ) -> None:
+    service = ctx.user_service
+
     local_id = 'start_command'
 
-    chat_id = update.effective_chat.id
-    if chat_id is None:
-        logger.warning(f'[{local_id}] chat_id is None.')
-        return
-
-    service = context.bot_data.get('service')
-    if service is None:
-        logger.error(f'[{local_id}] User service is None!')
-        return
-
-    user = await service.get_or_create_user(
-        update.effective_user
-    )
-
-    user_msg = update.message.text
+    if ctx.domain_user is None:
+        ctx.domain_user = await service.create_user(
+            # Передаем Телеграм пользователя
+            update.effective_user
+        )
 
     # Идентификатор для логгера - добавляем имя пользователя
-    local_id = f'start_command:{user.name}'
-
-    logger.info(f'[{local_id}] user_msg={user_msg}')
+    local_id = f'start_command:{ctx.domain_user.name}'
 
     cfg = context.bot_data.get('cfg')
     if (cfg is None) or (not isinstance(cfg, Cfg)):
@@ -54,8 +50,8 @@ async def start_command(
     else:  # С конфигом всё в порядке
         text = cfg.msg.start_text
         # Если id владельца из конфигурации совпадает с id пользователя
-        if cfg.owner_id == user.tg_id:
-            await service.set_as_owner(user)
+        if cfg.owner_id == ctx.domain_user.tg_id:
+            await service.set_as_owner(ctx.domain_user)
             text += '\nВладелец опознан!'
 
     # сброс пользовательских данных
@@ -63,7 +59,7 @@ async def start_command(
     context.user_data['user_cfg'] = cfg.user
 
     await send_to_chat(
-        chat_id,
+        ctx.chat.id,
         context.bot,
-        f"{user.name}, {text}"
+        f"{ctx.domain_user.name}, {text}"
     )
