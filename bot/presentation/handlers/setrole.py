@@ -4,16 +4,15 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from bot.core.messenger import send_to_chat
-from bot.application.exceptions import (
-    RoleNotFoundError,
-)
+from bot.presentation.common.handler_decorators import handle_user_errors
 import logging
 logger = logging.getLogger('prehensor')
 
+@handle_user_errors
 async def set_role_command(
-        update: Update,
-        context: ContextTypes.DEFAULT_TYPE
-    ) -> None:
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> None:
     local_id = 'set_role_command'
 
     chat_id = update.effective_chat.id
@@ -35,13 +34,6 @@ async def set_role_command(
         update.effective_user.id
     )
 
-    # Идентификатор для логгера - добавляем имя пользователя
-    local_id = f'set_role_command:{user.name}'
-
-    logger.info(f'[{local_id}] user_msg={user_msg}')
-
-    msg_for_user = None
-    # Отрезаем от сообщения команду: берем только то, что через пробел
     target_role = (
         user_msg
         .strip()
@@ -49,19 +41,11 @@ async def set_role_command(
         .removeprefix('/SETROLE ')
     )
 
-    try:
-        assigned_role = await service.set_role(
-            user,
-            target_role
-        )
-        msg_for_user = f'Роль "{assigned_role.value or 'None'}" установлена.'
-    except RoleNotFoundError as e:
-        msg = str(e)
-        logger.error(f'[{local_id}] {msg}')
-        msg_for_user = 'Такой роли не существует.'
-    except Exception:
-        logger.exception('Set role failed.')
-        msg_for_user = 'Не удалось установить роль.'
+    assigned_role = await service.set_role(
+        user,
+        target_role
+    )
+    msg_for_user = f'Роль "{assigned_role.value or 'None'}" установлена.'
 
     await send_to_chat(
         chat_id,

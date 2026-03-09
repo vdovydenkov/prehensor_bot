@@ -1,17 +1,19 @@
-# bot/handlers/info.py
+# bot/presentation/handlers/info.py
 
 from telegram import Update
 from telegram.ext import ContextTypes
 
 from bot.core.messenger import send_media_info
+from bot.presentation.common.handler_decorators import handle_user_errors
 
 import logging
 logger = logging.getLogger('prehensor')
 
+@handle_user_errors
 async def info_command(
-        update: Update,
-        context: ContextTypes.DEFAULT_TYPE
-    ) -> None:
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> None:
     chat_id = update.effective_chat.id
     if chat_id is None:
         logger.warning('info_command: chat_id is None.')

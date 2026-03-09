@@ -1,4 +1,4 @@
-# /bot/handlers/help.py
+# /bot/presentation/handlers/help.py
 
 from telegram import Update
 from telegram.ext import ContextTypes
@@ -6,14 +6,16 @@ from telegram.ext import ContextTypes
 from bot.core.messenger import send_to_chat
 from bot.config.configurator import Cfg
 from bot.config.defaults import DEFAULT_RAW_CONFIG
+from bot.presentation.common.handler_decorators import handle_user_errors
 
 import logging
 logger = logging.getLogger('prehensor')
 
+@handle_user_errors
 async def help_command(
-        update: Update,
-        context: ContextTypes.DEFAULT_TYPE
-    ) -> None:
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> None:
     chat_id = update.effective_chat.id
     if chat_id is None:
         logger.warning('help_command: chat_id is None.')

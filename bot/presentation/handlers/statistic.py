@@ -5,19 +5,15 @@ from telegram.ext import ContextTypes
 
 from bot.core.messenger import send_to_chat
 from bot.presentation.formaters.list_formater import format_list
-from bot.application.exceptions import (
-    UserServiceError,
-    UserNotFoundError,
-    UserBlockedError,
-    AccessDeniedError,
-)
+from bot.presentation.common.handler_decorators import handle_user_errors
 import logging
 logger = logging.getLogger('prehensor')
 
+@handle_user_errors
 async def statistic_command(
-        update: Update,
-        context: ContextTypes.DEFAULT_TYPE
-    ) -> None:
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> None:
     local_id = 'statistic_command'
 
     chat_id = update.effective_chat.id
@@ -39,34 +35,8 @@ async def statistic_command(
         update.effective_user.id
     )
 
-    # Идентификатор для логгера - добавляем имя пользователя
-    local_id = f'statistic_command:{user.name}'
-
-    logger.info(f'[{local_id}] user_msg={user_msg}')
-
-    msg_for_user = None
-    try:
-        users = await service.list_users(user)
-        msg_for_user = format_list(users)
-    except UserNotFoundError as e:
-        msg = str(e)
-        logger.warning(msg)
-        msg_for_user = 'Возникла ошибка при получении статистики.'
-    except UserBlockedError as e:
-        msg = str(e)
-        logger.warning(msg)
-        msg_for_user = 'Ваш доступ заблокирован. Вы не можете выполнять никаких действий.'
-    except AccessDeniedError as e:
-        msg = str(e)
-        logger.warning(msg)
-        msg_for_user = 'У вас нет прав на просмотр статистики.'
-    except UserServiceError as e:
-        msg = str(e)
-        logger.warning(msg)
-        msg_for_user = 'Возникла ошибка при формировании статистики.'
-    except Exception as e:
-        logger.error("Formatter error", exc_info=e)
-        msg_for_user = "Возникла ошибка при формировании списка пользователей."
+    users = await service.list_users(user)
+    msg_for_user = format_list(users)
 
     await send_to_chat(
         chat_id,

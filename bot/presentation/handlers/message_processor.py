@@ -8,14 +8,15 @@ from bot.core.fetcher import fetch_url
 from bot.core.messenger import send_to_chat, send_media_info
 from bot.config.configurator import Cfg
 from bot.config.defaults import DEFAULT_RAW_CONFIG
+from bot.presentation.common.handler_decorators import handle_user_errors
 import logging
 logger = logging.getLogger('prehensor')
 
-
+@handle_user_errors
 async def message_processor(
-        update: Update,
-        context: ContextTypes.DEFAULT_TYPE
-    ) -> None:
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> None:
     chat_id = update.effective_chat.id
     if chat_id is None:
         logger.warning('message_processor: chat_id is None.')

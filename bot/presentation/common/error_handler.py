@@ -15,6 +15,7 @@ async def error_handler(
         update: Update,
         context: ContextTypes.DEFAULT_TYPE
     ) -> None:
+    msg_for_user = 'Простите, произошла ошибка. Администратору отправлен отчёт.'
     # Если конфига нет в контексте - берём по дефолту.
     cfg = context.bot_data.get(
         'cfg',
@@ -28,18 +29,24 @@ async def error_handler(
         logger.error(cfg.err.bot_conflict)
     elif isinstance(err, InvalidToken):
         logger.error(cfg.err.invalid_token)
-    else:
+
+    # Ошибки доступа
+
+    else:  # Ошибку нигде не отловили
         logger.error(
-            cfg.err.other_telegram_error,
-            exc_info=True
+            "Telegram error while processing update: %s",
+            update,
+            exc_info=context.error
         )
 
-    if isinstance(update, Update) and update.effective_user:
+    if update.effective_chat:
         try:
             await context.bot.send_message(
-                chat_id=update.effective_user.id,
-                text="Простите, произошла ошибка. Администратору отправлен отчёт."
+                chat_id=update.effective_chat.id,
+                text=msg_for_user,
             )
-        except Exception as e:
-            logger.warning("Не удалось отправить сообщение об ошибке пользователю", exc_info=e)
+        except Exception:
+            logger.exception(
+                'Не удалось отправить сообщение об ошибке пользователю'
+            )
 

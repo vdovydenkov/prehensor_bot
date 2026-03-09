@@ -1,18 +1,20 @@
-# bot/handlers/download.py
+# bot/presentation/handlers/download.py
 
 from telegram import Update
 from telegram.ext import ContextTypes
 
 from bot.core.fetcher import fetch_url
 from bot.core.messenger import send_media, send_to_chat
+from bot.presentation.common.handler_decorators import handle_user_errors
 
 import logging
 logger = logging.getLogger('prehensor')
 
+@handle_user_errors
 async def download_command(
-        update: Update,
-        context: ContextTypes.DEFAULT_TYPE
-    ) -> None:
+    update: Update,
+    context: ContextTypes.DEFAULT_TYPE
+) -> None:
     chat_id = update.effective_chat.id
     if chat_id is None:
         logger.warning('download_command: chat_id is None.')
